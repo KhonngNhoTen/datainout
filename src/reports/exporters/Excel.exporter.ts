@@ -57,7 +57,7 @@ export class ExcelExporter implements Exporter {
             sheet,
             contentTable,
             (reportData.table as any)[i][contentTable?.value?.fieldName ?? ""],
-            `${contentTable.address}${excelFormat.beginTable + 1}`
+            `${contentTable.address}${excelFormat.beginTable + 1}`,
           );
         });
         isFirstRow = false;

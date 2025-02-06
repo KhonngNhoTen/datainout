@@ -58,7 +58,7 @@ function createCellDescription(
   cell: exceljs.Cell,
   rowIndex: number,
   beginTable: number,
-  endTable?: number
+  endTable?: number,
 ): CellDescription | null {
   if (cell && (!(cell.value + "").includes("$") || (cell as any)._value.model.type === exceljs.ValueType.Merge)) return null;
 

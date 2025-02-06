@@ -19,7 +19,8 @@ export class SheetDesciption {
 
     const foundIndex = this.content.findIndex(
       (e) =>
-        e.address && ((section !== "table" && address === e.address) || (section === "table" && address.indexOf(e.address) === 0))
+        e.address &&
+        ((section !== "table" && address === e.address) || (section === "table" && address.indexOf(e.address) === 0)),
     );
     if (foundIndex === -1) return null;
     return this.content[foundIndex];
