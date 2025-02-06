@@ -10,7 +10,10 @@
   },
   "keywords": [
     "Import",
-    "Report"
+    "Report",
+    "exports",
+    "ejs",
+    "exceljs"
   ],
   "author": "KhonngNhoTen",
   "license": "ISC",
