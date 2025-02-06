@@ -5,7 +5,7 @@
   "types": "./dist/type.d.ts",
   "scripts": {
     "build": "rm -r ./dist & tsc",
-    "publish": "npm run format && npm test && npm run build && npm publish --access public",
+    "publish": "npm test && npm run build && npm publish --access public",
     "format": "npx prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\""
   },
   "keywords": [
