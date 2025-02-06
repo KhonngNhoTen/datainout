@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://github.com/KhonngNhoTen/inoutjs">
-    <img src="https://i.postimg.cc/dZ3hQvD8/inoutjs-logo.png" width="492" height="228">
+    <img src="https://i.postimg.cc/bwFbL578/inoutjs2-logo.png">
   </a>
 </div>  
 <br>
