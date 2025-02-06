@@ -4,8 +4,9 @@
   "main": "./dist/index.js",
   "types": "./dist/type.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "rm -r ./dist && npx tsc"
+    "build": "rm -r ./dist & tsc",
+    "publish": "npm run format && npm test && npm run build && npm publish --access public",
+    "format": "npx prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\""
   },
   "keywords": [
     "Import",
@@ -19,11 +20,17 @@
     "typescript": "^5.7.3"
   },
   "dependencies": {
+    "@types/ejs": "^3.1.5",
     "commander": "^13.0.0",
     "dayjs": "^1.11.13",
     "exceljs": "^4.4.0"
   },
   "bin": {
-    "inoutjs:import-convert": "./dist/bin/import-convert.script.js"
+    "import:convert": "./dist/bin/import-convert.script.js",
+    "report:template excel2excel": "./dist/bin/template-report/excel-generate.ts"
+  },
+  "peerDependencies": {
+    "ejs": "^3.1.10",
+    "puppeteer": "^24.2.0"
   }
 }

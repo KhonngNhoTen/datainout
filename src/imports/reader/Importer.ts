@@ -5,7 +5,7 @@ import { ImportFileDesciption, SheetDesciption } from "./ImporterFileDescription
 import { CellDescription, ResultOfImport, SheetSection } from "../type";
 import { TypeParser } from "../../helper/parse-type";
 
-type ImporterReaderOptions = {
+type ImporterOptions = {
   importDesciptionPath: string;
   chunkSize?: number;
   handlers: (typeof ImporterHandler)[];
@@ -20,7 +20,7 @@ export class ImporterReader {
 
   private typeParser;
 
-  constructor(opts: ImporterReaderOptions) {
+  constructor(opts: ImporterOptions) {
     this.handlers = opts.handlers.map((handler) => new (handler as any)());
     this.importDesciptionPath = opts.importDesciptionPath;
     this.importDesciption = new ImportFileDesciption(require(this.importDesciptionPath));
@@ -33,9 +33,8 @@ export class ImporterReader {
    */
   private formatValue(cellDescription: CellDescription, value: any, result: ResultOfImport) {
     const name = cellDescription.fieldName;
-    if (cellDescription.transform) value = cellDescription.transform(value, result);
+    if (cellDescription.setValue) value = cellDescription.setValue(value, result);
     if (cellDescription.type && cellDescription.type !== "virtual") value = (this.typeParser as any)[cellDescription.type](value);
-    if (cellDescription.defaultValue) value = cellDescription.defaultValue;
     if (cellDescription.validate && cellDescription.validate(value)) throw new Error("Validated fail");
     return { name, value };
   }

@@ -6,9 +6,8 @@ export type CellDescription = {
   fieldName: string;
   section: SheetSection;
   address?: string;
-  transform?: (rawCellvalue: string | undefined, result: ResultOfImport) => any;
+  setValue?: (rawCellvalue: string | undefined, result: ResultOfImport) => any;
   validate?: (val: any) => boolean;
-  defaultValue?: any;
 };
 
 export type SheetDesciptionOptions = {

@@ -24,7 +24,7 @@ export async function convertFileImport(sourcePath: string, outDir: string, name
 
 function genContentFile(importDesciption: ImportFileDesciptionOptions): string {
   return `
-  /** @type {import("./imports/type").ImportFileDesciptionOptions} */
+  /** @type {import("inoutjs").ImportFileDesciptionOptions} */
   module.exports =
   ${JSON.stringify(importDesciption, null, undefined)}
   `;
