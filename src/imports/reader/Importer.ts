@@ -1,4 +1,4 @@
-import { Stream } from "stream";
+import { PassThrough, Stream, Writable } from "stream";
 import * as exceljs from "exceljs";
 import { FilterImportHandler, ImporterHandler } from "./ImporterHandler";
 import { ImportFileDesciption, SheetDesciption } from "./ImporterFileDescription";
@@ -11,7 +11,7 @@ type ImporterOptions = {
   handlers: (typeof ImporterHandler)[];
   dateFormat?: string;
 };
-export class ImporterReader {
+export class Importer {
   private importDesciption: ImportFileDesciption = [] as any;
   private importDesciptionPath: string;
   private handlers: ImporterHandler[];
@@ -144,5 +144,23 @@ export class ImporterReader {
     else if (arg instanceof Stream) await workBook.xlsx.read(arg);
 
     for (let i = 0; i < this.importDesciption.sheets.length; i++) await this.readWorkSheet(workBook, i);
+  }
+
+  createStream(): { stream: Writable; promise: Promise<any> } {
+    const stream = new PassThrough({});
+    const workBookReader = new exceljs.stream.xlsx.WorkbookReader(stream, {
+      worksheets: "emit",
+    });
+
+    const promise = (async function () {
+      await workBookReader.read();
+      for await (const worksheetReader of workBookReader) {
+        for await (const row of worksheetReader) {
+          console.log(row);
+        }
+      }
+    })();
+
+    return { stream, promise };
   }
 }
