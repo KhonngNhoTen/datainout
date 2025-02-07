@@ -146,21 +146,25 @@ export class Importer {
     for (let i = 0; i < this.importDesciption.sheets.length; i++) await this.readWorkSheet(workBook, i);
   }
 
-  createStream(): { stream: Writable; promise: Promise<any> } {
+  createStream(): Writable {
     const stream = new PassThrough({});
     const workBookReader = new exceljs.stream.xlsx.WorkbookReader(stream, {
       worksheets: "emit",
     });
 
-    const promise = (async function () {
+    (async function () {
       await workBookReader.read();
       for await (const worksheetReader of workBookReader) {
         for await (const row of worksheetReader) {
-          console.log(row);
+          console.log("const row of worksheetReader", row);
         }
       }
-    })();
+    })()
+      .then((data) => {
+        console.log("THEN data");
+      })
+      .catch((error) => console.error(error));
 
-    return { stream, promise };
+    return stream;
   }
 }
