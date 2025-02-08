@@ -11,10 +11,11 @@ type ReporterOptions = {
 
 export class Reporter {
   exporter: Exporter;
-  cronManager: CronManager = new CronManager();
+  cronManager: CronManager;
   constructor(opts: ReporterOptions) {
     this.exporter = exporterFactory(opts.exporterType);
     this.exporter.setup(opts.templatePath);
+    this.cronManager = new CronManager(this);
   }
   async writeFile(data: ReportData, reportPath: string): Promise<any>;
   async writeFile(data: ReportData[], reportPath: string): Promise<any>;

@@ -1,8 +1,13 @@
 import { CronTime } from "cron";
 import { Cron, HandlerCron } from "./Cron";
+import { Reporter } from "../Reporter";
 
 export class CronManager {
   private crons: Record<string, Cron> = {};
+  private reporter: Reporter;
+  constructor(reporter: Reporter) {
+    this.reporter = reporter;
+  }
   async stopCron(name: string) {
     const cron = this.get(name);
     await cron.stop();
@@ -15,7 +20,7 @@ export class CronManager {
 
   createCron(scheduling: string | Date, name: string, onTick?: HandlerCron, cronTime?: CronTime) {
     if (this.crons.name) throw new Error(`Name cron[ ${name}] is dupplicated`);
-    this.crons[name] = new Cron(scheduling, name, onTick, cronTime);
+    this.crons[name] = new Cron(this.reporter, scheduling, name, onTick, cronTime);
 
     return this.get(name);
   }

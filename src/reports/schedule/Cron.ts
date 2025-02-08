@@ -1,6 +1,7 @@
 import { CronJob, CronTime } from "cron";
+import { Reporter } from "../Reporter";
 
-export type HandlerCron = () => Promise<any>;
+export type HandlerCron = (reporter: Reporter) => Promise<any>;
 type EventCronName = "start" | "stop" | "tick" | "awake" | "error";
 export class Cron {
   private scheduling: string | Date;
@@ -8,13 +9,15 @@ export class Cron {
   private cronTime?: CronTime;
   private cronJob?: CronJob;
   private handlers: {
-    [k in EventCronName]?: HandlerCron;
+    [k in EventCronName]?: () => Promise<any>;
   } = {};
+  private reporter: Reporter;
 
-  constructor(scheduling: string | Date, name?: string, onTick?: HandlerCron, cronTime?: CronTime) {
+  constructor(reporter: Reporter, scheduling: string | Date, name?: string, onTick?: HandlerCron, cronTime?: CronTime) {
     this.scheduling = scheduling;
     this.name = name ?? "";
-    if (onTick) this.handlers.tick = onTick;
+    this.reporter = reporter;
+    if (onTick) this.handlers.tick = this.createCallBack(onTick);
     this.cronTime = cronTime;
   }
 
@@ -56,22 +59,26 @@ export class Cron {
   }
 
   onStart(handler: HandlerCron) {
-    this.handlers.start = handler;
+    this.handlers.start = this.createCallBack(handler);
   }
 
   onStop(handler: HandlerCron) {
-    this.handlers.stop = handler;
+    this.handlers.stop = this.createCallBack(handler);
   }
 
   onTick(handler: HandlerCron) {
-    this.handlers.tick = handler;
+    this.handlers.tick = this.createCallBack(handler);
   }
 
   onAwake(handler: HandlerCron) {
-    this.handlers.awake = handler;
+    this.handlers.awake = this.createCallBack(handler);
   }
 
   onError(handler: HandlerCron) {
-    this.handlers.error = handler;
+    this.handlers.error = this.createCallBack(handler);
+  }
+
+  private createCallBack(handler: HandlerCron) {
+    return async () => handler(this.reporter);
   }
 }
