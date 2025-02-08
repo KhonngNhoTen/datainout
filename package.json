@@ -1,11 +1,11 @@
 {
-  "name": "inout-js",
+  "name": "datainout",
   "version": "1.0.0",
   "main": "./dist/index.js",
   "types": "./dist/type.d.ts",
   "scripts": {
     "build": "rm -r ./dist & tsc",
-    "publish": "npm test && npm run build && npm publish --access public",
+    "publish": "npm run build && npm publish --access public",
     "format": "npx prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\""
   },
   "keywords": [
@@ -25,6 +25,7 @@
   "dependencies": {
     "@types/ejs": "^3.1.5",
     "commander": "^13.0.0",
+    "cron": "^3.5.0",
     "dayjs": "^1.11.13",
     "exceljs": "^4.4.0"
   },
