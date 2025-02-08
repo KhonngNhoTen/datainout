@@ -25,6 +25,7 @@
   "dependencies": {
     "@types/ejs": "^3.1.5",
     "commander": "^13.0.0",
+    "cron": "^3.5.0",
     "dayjs": "^1.11.13",
     "exceljs": "^4.4.0"
   },
