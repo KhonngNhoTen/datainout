@@ -9,8 +9,12 @@ export class ExcelExporter extends Exporter {
   excelFormat: ExcelFormat = [];
   workBook?: exceljs.Workbook;
 
-  setup(templatePath: string) {
-    this.excelFormat = require(templatePath) as ExcelFormat;
+  constructor(templatePath: string, opts: any) {
+    super(templatePath, opts);
+    this.excelFormat =
+      getFileExtension(this.templatePath) === "js"
+        ? (require(templatePath) as ExcelFormat)
+        : (require(templatePath).default as ExcelFormat);
     this.workBook = new exceljs.Workbook();
   }
 
@@ -47,12 +51,12 @@ export class ExcelExporter extends Exporter {
     });
 
     // Add cells in table-section
-    const titleTables = excelFormat.cellFomats.filter((e) => e.section === "table" && e.isHardCell);
+    const titleTables = excelFormat.cellFomats.filter((e) => e.section === "table" && !e.isVariable);
     titleTables.forEach((titleTable) => {
       this.createCell(sheet, titleTable, undefined);
     });
 
-    const contentTables = excelFormat.cellFomats.filter((e) => e.section === "table" && !e.isHardCell);
+    const contentTables = excelFormat.cellFomats.filter((e) => e.section === "table" && e.isVariable);
     let isFirstRow = true;
     reportData.table?.forEach((row, i) => {
       // is first row in table
@@ -62,7 +66,7 @@ export class ExcelExporter extends Exporter {
             sheet,
             contentTable,
             (reportData.table as any)[i][contentTable?.value?.fieldName ?? ""],
-            `${contentTable.address}${excelFormat.beginTable + 1}`,
+            `${contentTable.address}${excelFormat.beginTableAt + 1}`
           );
         });
         isFirstRow = false;
@@ -80,15 +84,17 @@ export class ExcelExporter extends Exporter {
   protected createCell(sheet: exceljs.Worksheet, cellFormat: CellFormat, cellValue: any, address?: string) {
     const cell = sheet.getCell(address ?? cellFormat.address);
     cell.style = cellFormat.style;
-    cell.value = cellFormat.isHardCell ? cellFormat.value.hardValue : cellValue;
+    cell.value = !cellFormat.isVariable ? cellFormat.value.hardValue : cellValue;
   }
 
   protected mergesCells(sheet: exceljs.Worksheet, sheetFormat: SheetFormat) {
-    if (sheetFormat.merges)
+    if (sheetFormat.merges) {
+      const merges = sheetFormat.merges;
       Object.keys(sheetFormat.merges).forEach((masterCell: string) => {
-        const { top, left, right, bottom } = sheetFormat.merges[masterCell].model;
+        const { top, left, right, bottom } = merges[masterCell].model;
         sheet.mergeCells(top, left, bottom, right);
       });
+    }
 
     return sheet;
   }

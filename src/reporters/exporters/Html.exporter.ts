@@ -4,12 +4,11 @@ import { CreateStreamOpts, ReportData } from "../type.js";
 import { Exporter } from "./Exporter.js";
 import { WriterStreanm } from "./stream/WriterStream.js";
 
-export class HtmlExporter implements Exporter {
+export class HtmlExporter extends Exporter {
   private templateContent: string = "";
-  private templatePath: string = "";
 
-  async setup(templatePath: string): Promise<any> {
-    this.templateContent = templatePath;
+  constructor(templatePath: string, opts: any) {
+    super(templatePath, opts);
   }
 
   async writeFile(reportData: ReportData | ReportData[], path: string) {

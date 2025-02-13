@@ -34,17 +34,18 @@ export class ExcelWriterStream implements WriterStreanm {
 
   add(chunks: any[], sheetIndex?: number) {
     try {
-      console.log("ADDD FUNCTION");
       if (this._workSheet.length === 0) this._workSheet.push(this._workBookWriter.addWorksheet());
       if (!sheetIndex) sheetIndex = 0;
 
       const workSheet = this._workSheet[sheetIndex];
-      const row = this.createRow(
-        chunks,
-        workSheet.addRow([]),
-        this._cellFormats["TABLE"].filter((e) => e.section === "table" && e.isVariable)
-      );
-      row.commit();
+      chunks.forEach((chunk) => {
+        const row = this.createRow(
+          chunk,
+          workSheet.addRow([]),
+          this._cellFormats["TABLE"].filter((e) => e.section === "table" && e.isVariable)
+        );
+        row.commit();
+      });
 
       this._indexRow++;
     } catch (error) {
@@ -60,7 +61,6 @@ export class ExcelWriterStream implements WriterStreanm {
     const cells = this._excelFormat[sheetIndex].cellFomats;
 
     this._cellFormats = cells.reduce((init, format) => {
-      const { fullAddress } = format;
       const section = format.section;
       const key = (section ?? "").toUpperCase();
 
@@ -71,10 +71,6 @@ export class ExcelWriterStream implements WriterStreanm {
     }, {} as Record<string, any[]>);
 
     if (this._sheetBegin) this._sheetBegin();
-
-    // Set merges and width height
-    this.mergesCells(this._workSheet[sheetIndex], this._excelFormat[sheetIndex]);
-    this.setWidthsAndHeights(this._workSheet[sheetIndex], this._excelFormat[sheetIndex]);
 
     // Add cells in header-section
     this.addHeader(content.header, this._cellFormats["HEADER"], sheetIndex);
@@ -87,8 +83,9 @@ export class ExcelWriterStream implements WriterStreanm {
 
   async doneSheet(sheetIndex: number) {
     // Add cells in footer-section
-    if (this._content.footer) this.addFooter(this._content.footer, this._cellFormats["FOOTER"], sheetIndex, this._indexRow);
-
+    this.addFooter(this._content.footer, this._cellFormats["FOOTER"], sheetIndex, this._indexRow);
+    // Set merges and width height
+    this.setWidths(this._workSheet[sheetIndex], this._excelFormat[sheetIndex]);
     this._workSheet[sheetIndex].commit();
     if (this._sheetFinish) this._sheetFinish();
   }
@@ -116,37 +113,49 @@ export class ExcelWriterStream implements WriterStreanm {
   }
 
   private addHeader(header: any, cellFormats: CellFormat[], sheetIndex: number) {
+    if (!cellFormats) return;
+
     const workSheet = this._workSheet[sheetIndex];
     const sheetFormat = this._excelFormat[sheetIndex];
-    for (let i = 1; i < sheetFormat.beginTableAt; i++) {
+    const rowHeaders = [];
+    for (let i = 1; i <= sheetFormat.beginTableAt; i++) {
       const row = workSheet.addRow([]);
       const formats = cellFormats.filter((e) => e.fullAddress.row === i);
-      formats.forEach((format) => this.updateCell(header, format, row.getCell(format.fullAddress.col)));
-      row.commit();
+      formats.forEach((format) => this.updateCell(header ?? {}, format, row.getCell(format.fullAddress.col)));
+
+      rowHeaders.push(row);
     }
-    this._indexRow = sheetFormat.beginTableAt - 1;
+
+    rowHeaders.forEach((row) => {
+      this.mergesCells(workSheet, sheetFormat, row.number);
+    });
+
+    this._indexRow = sheetFormat.beginTableAt;
   }
 
   private addFooter(footer: any, cellFormats: CellFormat[], sheetIndex: number, endTableAt: number) {
+    if (!cellFormats) return;
     const workSheet = this._workSheet[sheetIndex];
     const numberOfRowFooter = cellFormats.reduce((max, val) => (max > val.fullAddress.row ? max : val.fullAddress.row), 0);
 
     for (let i = 1; i <= numberOfRowFooter; i++) {
       const row = workSheet.addRow([]);
       const formats = cellFormats.filter((e) => i === e.fullAddress.row + endTableAt);
-      formats.forEach((format) => this.updateCell(footer, format, row.getCell(format.fullAddress.col)));
+      formats.forEach((format) => this.updateCell(footer ?? {}, format, row.getCell(format.fullAddress.col)));
       row.commit();
       this._indexRow++;
     }
   }
 
   private addTitleTable(cellFormats: CellFormat[], sheetIndex: number) {
-    const workSheet = this._workSheet[sheetIndex];
-    const numberOfTitleTable = cellFormats
-      .filter((e) => e.section === "table" && !e.isVariable)
-      .reduce((max, val) => (max > val.fullAddress.row ? max : val.fullAddress.row), 0);
+    if (!cellFormats) return;
+    cellFormats = cellFormats.filter((e) => e.section === "table" && !e.isVariable);
+    if (cellFormats.length === 0) return;
 
+    const workSheet = this._workSheet[sheetIndex];
+    const numberOfTitleTable = Math.max(...cellFormats.map((e) => e.fullAddress.row)) - this._indexRow;
     const titleTables = cellFormats.filter((e) => e.section === "table" && !e.isVariable);
+
     for (let i = 0; i < numberOfTitleTable; i++) {
       const row = workSheet.addRow([]);
       const formats = titleTables.filter((e) => i === e.fullAddress.row);
@@ -156,26 +165,23 @@ export class ExcelWriterStream implements WriterStreanm {
     }
   }
 
-  private mergesCells(sheet: exceljs.Worksheet, sheetFormat: SheetFormat) {
-    if (sheetFormat.merges)
-      Object.keys(sheetFormat.merges).forEach((masterCell: string) => {
-        const { top, left, right, bottom } = sheetFormat.merges[masterCell].model;
+  private mergesCells(sheet: exceljs.Worksheet, sheetFormat: SheetFormat, rowIndex: number) {
+    if (sheetFormat.merges) {
+      const merges = sheetFormat.merges;
+      const keys = Object.keys(merges).filter((key) => merges[key].model.top === rowIndex);
+      keys.forEach((masterCell: string) => {
+        const { top, left, right, bottom } = merges[masterCell].model;
         sheet.mergeCells(top, left, bottom, right);
       });
+    }
 
     return sheet;
   }
 
-  private setWidthsAndHeights(sheet: exceljs.Worksheet, sheetFormat: SheetFormat) {
+  private setWidths(sheet: exceljs.Worksheet, sheetFormat: SheetFormat) {
     // Set column's width
     sheetFormat.columnWidths?.forEach((colW, i) => {
       if (sheet.columns[i]) sheet.columns[i].width = colW;
-    });
-
-    // Set header and footer height
-    const rowHeights = sheetFormat.rowHeights;
-    Object.keys(rowHeights).forEach((rowIndex) => {
-      if (rowHeights[rowIndex]) sheet.getRow(rowHeights[rowIndex]).height = rowHeights[rowIndex];
     });
 
     return sheet;

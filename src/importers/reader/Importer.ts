@@ -25,8 +25,11 @@ export class Importer {
 
   constructor(opts: ImporterOptions) {
     this.handlers = opts.handlers.map((handler) => new (handler as any)());
-    this.importDesciptionPath = opts.importDesciptionPath;
-    this.importDesciption = new ImportFileDesciption(require(this.importDesciptionPath));
+    this.importDesciptionPath = pathImport(opts.importDesciptionPath, "templateDir");
+    this.importDesciption =
+      getFileExtension(this.importDesciptionPath) === "js"
+        ? new ImportFileDesciption(require(this.importDesciptionPath))
+        : new ImportFileDesciption(require(this.importDesciptionPath).default);
     this.chunkSize = opts.chunkSize ?? 1;
     this.typeParser = new TypeParser({ dateFormat: opts.dateFormat });
   }
@@ -86,7 +89,6 @@ export class Importer {
   private async readWorkSheet(workBook: exceljs.Workbook, sheetIndex: number) {
     const workSheet = workBook.getWorksheet(sheetIndex + 1);
     const workSheetDescription = this.importDesciption.sheets[sheetIndex];
-
     if (!workSheet) return;
 
     // Read header section
@@ -110,8 +112,8 @@ export class Importer {
     let index = workSheetDescription.beginTableAt + 1;
     let result: TableData = { table: [] };
 
-    while (index <= endTable) {
-      const rows = workSheet.getRows(index, index + this.chunkSize <= endTable ? this.chunkSize : endTable + 1 - index);
+    while (index <= endTableAt) {
+      const rows = workSheet.getRows(index, index + this.chunkSize <= endTableAt ? this.chunkSize : endTableAt + 1 - index);
       if (rows) {
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i];
@@ -127,7 +129,8 @@ export class Importer {
 
           result.table?.push(resultRow);
         }
-        if (result.table && result.table?.length > 0) await this.callHandlers(result, { sheetIndex, section: "table" });
+        if (result.table && result.table?.length > 0)
+          await this.callHandlers(result, { sheetIndex, section: "table", sheetName: workSheetDescription.name });
         result.table = [];
       }
 
@@ -144,7 +147,7 @@ export class Importer {
   async load(arg: unknown) {
     const workBook = new exceljs.Workbook();
 
-    if (arg instanceof Buffer) await workBook.xlsx.load(arg);
+    if (arg instanceof Buffer) await workBook.xlsx.load(arg as unknown as exceljs.Buffer);
     else if (typeof arg === "string") await workBook.xlsx.readFile(arg);
     else if (arg instanceof Stream) await workBook.xlsx.read(arg);
 

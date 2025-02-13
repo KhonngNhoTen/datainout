@@ -17,8 +17,8 @@ export type CellDescription = {
 };
 
 export type SheetDesciptionOptions = {
-  startTable?: number;
-  endTable?: number;
+  beginTableAt?: number;
+  endTableAt?: number;
   content: Array<CellDescription>;
   name?: string;
   keyIndex?: number;

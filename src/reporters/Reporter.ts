@@ -27,6 +27,7 @@ export class Reporter {
   async writeFile(data: ReportData[], reportPath: string): Promise<any>;
   async writeFile(data: ReportData | ReportData[], reportPath: string) {
     console.log(`Gernerating report ....`);
+    reportPath = pathReport(reportPath, "reportDir");
     await this.exporter.writeFile(data, reportPath);
     console.log(`Generate report successfully. File report at ${reportPath}`);
   }

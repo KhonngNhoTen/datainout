@@ -13,7 +13,7 @@ export class TypeParser {
     return val === "true";
   }
   date(val: string) {
-    return dayjs(val, this.dateFormat).toDate();
+    return new Date(val); //dayjs(val, this.dateFormat).toDate();
   }
   number(val: string) {
     return +val;

@@ -1,16 +1,16 @@
 import * as exceljs from "exceljs";
 import * as fs from "fs/promises";
-import { CellDescription, CellType, ImportFileDesciptionOptions, SheetDesciptionOptions, SheetSection } from "../type";
-import { pathImport } from "../../helper/path-file";
-import { CellDataHelper, ExcelReaderHelper, SheetDataHelper } from "../../helper/excel-reader-helper";
+import { CellDescription, CellType, SheetDesciptionOptions, TemplateExcelImportOptions, SheetSection } from "../type.js";
+import { pathImport } from "../../helper/path-file.js";
+import { CellDataHelper, ExcelReaderHelper, SheetDataHelper } from "../../helper/excel-reader-helper.js";
 import path from "path";
-import { getConfig } from "../../datainout-config";
-import { ImportFileDesciption } from "../reader/ImporterFileDescription";
+import { getConfig } from "../../datainout-config.js";
+import { ImportFileDesciption } from "../reader/ImporterFileDescription.js";
 
 export class ExcelImportTemplateGenerator {
   private templatePath: string;
   private excelReaderHelper: ExcelReaderHelper;
-  private importDesc: ImportFileDesciptionOptions = { sheets: [] };
+  private importDesc: TemplateExcelImportOptions = { sheets: [] };
   private currentSheet: CellDescription[] = [];
 
   constructor(templatePath: string) {
@@ -23,8 +23,8 @@ export class ExcelImportTemplateGenerator {
     this.templatePath = pathImport(templatePath ?? "", "templateDir");
 
     this.excelReaderHelper = new ExcelReaderHelper({
-      onCell: (data) => this.onCell(data),
-      onSheet: (data) => this.onSheet(data),
+      onCell: (data: any) => this.onCell(data),
+      onSheet: (data: any) => this.onSheet(data),
     });
   }
 
@@ -45,11 +45,14 @@ export class ExcelImportTemplateGenerator {
 
   private onCell(cell: CellDataHelper) {
     if (!cell.isVariable || (cell.detail as any)._value.model.type === exceljs.ValueType.Merge) return;
+    const fullAddress = cell.detail.fullAddress;
+    if (cell.section === "footer") fullAddress.row = fullAddress.row - (cell.endTableAtAt ?? 0);
     this.currentSheet.push({
       fieldName: cell.variableValue?.fieldName ?? "",
       section: cell.section,
       type: cell.variableValue?.type ?? "string",
       address: cell.address,
+      fullAddress,
     });
   }
 
@@ -65,7 +68,7 @@ export class ExcelImportTemplateGenerator {
     }
   }
 
-  private genContentFile(importDesciption: ImportFileDesciptionOptions): string {
+  private genContentFile(importDesciption: TemplateExcelImportOptions): string {
     if (getConfig()?.templateExtension === ".js")
       return `/** @type {import("datainout").ImportFileDesciptionOptions} */
 const template = ${JSON.stringify(importDesciption, null, undefined)};

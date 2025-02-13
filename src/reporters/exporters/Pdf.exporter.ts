@@ -6,10 +6,11 @@ import { HtmlExporter } from "./Html.exporter.js";
 import { PassThrough } from "stream";
 import { WriterStreanm } from "./stream/WriterStream.js";
 
-export class PdfExporter implements Exporter {
-  private htmlExporter = new HtmlExporter();
-  setup(templatePath: string) {
-    this.htmlExporter.setup(templatePath);
+export class PdfExporter extends Exporter {
+  private htmlExporter;
+  constructor(templatePath: string, opts: any) {
+    super(templatePath, opts);
+    this.htmlExporter = new HtmlExporter(templatePath, opts);
   }
   async writeFile(reportData: ReportData | ReportData[], path: string): Promise<any> {
     const buffer = await this.createContent(reportData);

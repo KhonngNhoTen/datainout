@@ -130,7 +130,7 @@ export class ExcelReaderHelper {
     cellValue = cellValue + "";
     if (this.isBeginTableNull() && cellValue.includes(VARIABLE_TABLE_SYNTAX)) {
       if (cellValue.includes(TITLE_TABLE_SYNTAX)) return rowIndex + 1;
-      return rowIndex - 1;
+      return rowIndex;
     }
     return undefined;
   }
@@ -156,11 +156,16 @@ export class ExcelReaderHelper {
 
   private getSection(rowIndex: number): SheetSection {
     if (this.isBeginTableNull()) return "header";
+    if (!this.isBeginTableNull() && this.isendTableAtNull()) return "table";
+    if (!this.isendTableAtNull()) return "footer";
+    return "table";
 
-    let section: SheetSection = "table";
-    if (rowIndex < this.beginTable) section = "header";
-    else if (!this.isendTableAtNull() && this.rowCount && rowIndex > this.endTableAt) section = "footer";
-    return section;
+    // let section: SheetSection = "table";
+    // if (rowIndex < this.beginTable) section = "header";
+    // else if (!this.isendTableAtNull() && this.rowCount && rowIndex > this.endTableAt) section = "footer";
+
+    // if (rowIndex === 3 || rowIndex === 4) console.log(section);
+    // return section;
   }
 
   private getAddress(address: string, section: SheetSection, isVariable: boolean) {

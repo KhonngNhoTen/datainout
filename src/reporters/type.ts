@@ -1,4 +1,4 @@
-import { PaperSize, Style as CellStyle, Cell } from "exceljs";
+import { PaperSize, Style as CellStyle, Cell, Worksheet, Location } from "exceljs";
 import { SheetSection } from "../importers/type.js";
 import { Exporter } from "./exporters/Exporter.js";
 import { ReportDataIterator } from "./ReportDataIterator.js";
@@ -13,17 +13,17 @@ export type CellFormat = {
     fieldName?: string;
   };
   style: Partial<CellStyle>;
-  isHardCell: boolean;
+  isVariable: boolean;
 };
 
 export type SheetFormat = {
   pageSize?: PaperSize;
-  beginTable: number;
-  endTable?: number;
+  merges?: Record<string, { model: Location }>;
+  beginTableAt: number;
+  endTableAt?: number;
   cellFomats: CellFormat[];
   columnWidths?: (number | undefined)[];
   rowHeights: Record<string, number>;
-  merges?: any;
 };
 
 export type ReportData = {

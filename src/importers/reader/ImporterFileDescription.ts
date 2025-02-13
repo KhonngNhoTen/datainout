@@ -1,15 +1,15 @@
 import { CellDescription, TemplateExcelImportOptions, SheetDesciptionOptions, SheetSection } from "../type.js";
 
 export class SheetDesciption {
-  startTable: number;
-  endTable?: number;
+  beginTableAt: number;
+  endTableAt?: number;
   content: Array<CellDescription>;
   index: number;
   keyIndex: number = 1;
   name?: string;
   constructor(opts: SheetDesciptionOptions, index: number) {
-    this.startTable = opts.startTable ?? 1;
-    this.endTable = opts.endTable;
+    this.beginTableAt = opts.beginTableAt ?? 1;
+    this.endTableAt = opts.endTableAt;
     this.content = opts.content;
     this.index = index;
     this.name = opts.name;
@@ -18,13 +18,12 @@ export class SheetDesciption {
 
   findCellByAddress(address: string, rowIndex: number) {
     let section: SheetSection = "table";
-    if (rowIndex < this.startTable) section = "header";
-    else if (this.endTable && rowIndex > this.endTable) section = "footer";
+    if (rowIndex < this.beginTableAt) section = "header";
+    else if (this.endTableAt && rowIndex > this.endTableAt) section = "footer";
 
     const foundIndex = this.content.findIndex(
       (e) =>
-        e.address &&
-        ((section !== "table" && address === e.address) || (section === "table" && address.indexOf(e.address) === 0)),
+        e.address && ((section !== "table" && address === e.address) || (section === "table" && address.indexOf(e.address) === 0))
     );
     if (foundIndex === -1) return null;
     return this.content[foundIndex];
