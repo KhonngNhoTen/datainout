@@ -1,6 +1,6 @@
 import * as path from "path";
-import { pathReport } from "../../helper/path-file.js";
-import { getConfig } from "../../datainout-config.js";
+import { pathReport } from "../../helper/path-file";
+import { getConfig } from "../../datainout-config";
 export abstract class TemplateGenerator {
   protected templatePath: string;
 

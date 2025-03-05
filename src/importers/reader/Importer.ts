@@ -76,13 +76,8 @@ export class Importer {
       return init;
     }, undefined);
 
-<<<<<<< Updated upstream:src/imports/reader/Importer.ts
-    let result: ResultOfImport = { [section as string]: sectionResult };
-    await this.callHandlers(result, { sheetIndex: sheetDesciption.index, section });
-=======
     let result: TableData = { [section as string]: sectionResult };
     await this.callHandlers(result, { sheetIndex: sheetDesciption.index, section, sheetName: sheetDesciption.name });
->>>>>>> Stashed changes:src/importers/reader/Importer.ts
   }
 
   /**
@@ -109,17 +104,11 @@ export class Importer {
     this.headerTable = this.getCellDescriptionBySection("table", workSheetDescription);
 
     //// Read content of table
-<<<<<<< Updated upstream:src/imports/reader/Importer.ts
-    const endTable = workSheetDescription.endTable ? workSheetDescription.endTable - 1 : workSheet.rowCount;
-    let index = workSheetDescription.startTable + 1;
-    let result: ResultOfImport = { table: [] };
-=======
     const endTableAt = workSheetDescription.endTableAt
       ? workSheet.rowCount + workSheetDescription.endTableAt
       : workSheet.rowCount;
     let index = workSheetDescription.beginTableAt + 1;
     let result: TableData = { table: [] };
->>>>>>> Stashed changes:src/importers/reader/Importer.ts
 
     while (index <= endTable) {
       const rows = workSheet.getRows(index, index + this.chunkSize <= endTable ? this.chunkSize : endTable + 1 - index);
