@@ -1,5 +1,5 @@
 import { program } from "commander";
-import { convertFileImport } from "../imports/convert-file-import/convert-file-import";
+import { ExcelImportTemplateGenerator } from "../importers/convert-file-import/ExcelImportTemplateGenerator.js";
 
 program
   .description("Convert file excel to import description file")

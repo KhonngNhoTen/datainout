@@ -1,7 +1,8 @@
 import ejs from "ejs";
 import * as fs from "fs/promises";
-import { ReportData } from "../type";
-import { Exporter } from "./Exporter";
+import { CreateStreamOpts, ReportData } from "../type.js";
+import { Exporter } from "./Exporter.js";
+import { WriterStreanm } from "./stream/WriterStream.js";
 
 export class HtmlExporter implements Exporter {
   private templateContent: string = "";
@@ -27,5 +28,9 @@ export class HtmlExporter implements Exporter {
     if (!Array.isArray(reportData)) reportData = [reportData];
     const contentHtml = ejs.render(this.templateContent, reportData[0]);
     return contentHtml;
+  }
+
+  writerStream(opts: CreateStreamOpts): WriterStreanm {
+    throw new Error("Html not support writerStream");
   }
 }

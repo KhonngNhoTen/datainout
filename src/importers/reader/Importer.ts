@@ -1,9 +1,12 @@
 import { PassThrough, Stream, Writable } from "stream";
 import * as exceljs from "exceljs";
-import { FilterImportHandler, ImporterHandler } from "./ImporterHandler";
-import { ImportFileDesciption, SheetDesciption } from "./ImporterFileDescription";
-import { CellDescription, ResultOfImport, SheetSection } from "../type";
-import { TypeParser } from "../../helper/parse-type";
+import { ImporterHandler } from "./ImporterHandler.js";
+import { ImportFileDesciption, SheetDesciption } from "./ImporterFileDescription.js";
+import { CellDescription, FilterImportHandler, SheetSection } from "../type.js";
+import { TypeParser } from "../../helper/parse-type.js";
+import { getFileExtension } from "../../helper/get-file-extension.js";
+import { pathImport } from "../../helper/path-file.js";
+import { TableData } from "../../type.js";
 
 type ImporterOptions = {
   importDesciptionPath: string;
@@ -31,7 +34,7 @@ export class Importer {
   /**
    * Format cell's value by CellDescription
    */
-  private formatValue(cellDescription: CellDescription, value: any, result: ResultOfImport) {
+  private formatValue(cellDescription: CellDescription, value: any, result: TableData) {
     const name = cellDescription.fieldName;
     if (cellDescription.setValue) value = cellDescription.setValue(value, result);
     if (cellDescription.type && cellDescription.type !== "virtual") value = (this.typeParser as any)[cellDescription.type](value);
@@ -55,7 +58,7 @@ export class Importer {
   /**
    * Call list of handler with argument is result
    */
-  private async callHandlers(result: ResultOfImport, filter: FilterImportHandler) {
+  private async callHandlers(result: TableData, filter: FilterImportHandler) {
     for (let i = 0; i < this.handlers.length; i++) {
       result = await this.handlers[i].run(result, filter);
     }
@@ -73,8 +76,13 @@ export class Importer {
       return init;
     }, undefined);
 
+<<<<<<< Updated upstream:src/imports/reader/Importer.ts
     let result: ResultOfImport = { [section as string]: sectionResult };
     await this.callHandlers(result, { sheetIndex: sheetDesciption.index, section });
+=======
+    let result: TableData = { [section as string]: sectionResult };
+    await this.callHandlers(result, { sheetIndex: sheetDesciption.index, section, sheetName: sheetDesciption.name });
+>>>>>>> Stashed changes:src/importers/reader/Importer.ts
   }
 
   /**
@@ -101,9 +109,17 @@ export class Importer {
     this.headerTable = this.getCellDescriptionBySection("table", workSheetDescription);
 
     //// Read content of table
+<<<<<<< Updated upstream:src/imports/reader/Importer.ts
     const endTable = workSheetDescription.endTable ? workSheetDescription.endTable - 1 : workSheet.rowCount;
     let index = workSheetDescription.startTable + 1;
     let result: ResultOfImport = { table: [] };
+=======
+    const endTableAt = workSheetDescription.endTableAt
+      ? workSheet.rowCount + workSheetDescription.endTableAt
+      : workSheet.rowCount;
+    let index = workSheetDescription.beginTableAt + 1;
+    let result: TableData = { table: [] };
+>>>>>>> Stashed changes:src/importers/reader/Importer.ts
 
     while (index <= endTable) {
       const rows = workSheet.getRows(index, index + this.chunkSize <= endTable ? this.chunkSize : endTable + 1 - index);
@@ -147,23 +163,42 @@ export class Importer {
   }
 
   createStream(): Writable {
-    const stream = new PassThrough({});
+    const stream = new PassThrough();
+
     const workBookReader = new exceljs.stream.xlsx.WorkbookReader(stream, {
       worksheets: "emit",
     });
 
-    (async function () {
-      await workBookReader.read();
-      for await (const worksheetReader of workBookReader) {
-        for await (const row of worksheetReader) {
-          console.log("const row of worksheetReader", row);
-        }
-      }
-    })()
-      .then((data) => {
-        console.log("THEN data");
-      })
-      .catch((error) => console.error(error));
+    workBookReader.read();
+
+    (workBookReader as any).on("worksheet", function (worksheet: any) {
+      console.log("worksheet", worksheet);
+      worksheet.on("row", function (row: any) {
+        console.log(" row.values", row.values);
+        console.log(" row.model", row.model);
+        console.log("----------");
+      });
+
+      worksheet.on("close", function () {
+        console.log("worksheet close");
+        console.log("----------");
+      });
+
+      worksheet.on("finished", function () {
+        console.log("worksheet finished");
+        console.log("----------");
+      });
+    });
+
+    (workBookReader as any).on("finished", function () {
+      console.log("finished");
+      console.log("----------");
+    });
+
+    (workBookReader as any).on("close", function () {
+      console.log("close");
+      console.log("----------");
+    });
 
     return stream;
   }

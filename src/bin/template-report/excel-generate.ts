@@ -1,5 +1,5 @@
 import { program } from "commander";
-import { Excel2ExcelTemplateGenerator } from "../../reports/template-generator/ExcelTemplateGenerator";
+import { Excel2ExcelTemplateGenerator } from "../../reporters/template-generator/ExcelTemplateGenerator.js";
 
 program
   .description("Convert file excel into excel template file")

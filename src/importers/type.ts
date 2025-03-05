@@ -6,7 +6,13 @@ export type CellDescription = {
   fieldName: string;
   section: SheetSection;
   address?: string;
-  setValue?: (rawCellvalue: string | undefined, result: ResultOfImport) => any;
+  fullAddress: {
+    sheetName: string;
+    address: string;
+    row: number;
+    col: number;
+  };
+  setValue?: (rawCellvalue: string | undefined, row: {}) => any;
   validate?: (val: any) => boolean;
 };
 
@@ -14,13 +20,15 @@ export type SheetDesciptionOptions = {
   startTable?: number;
   endTable?: number;
   content: Array<CellDescription>;
+  name?: string;
+  keyIndex?: number;
 };
-export type ImportFileDesciptionOptions = {
+export type TemplateExcelImportOptions = {
   sheets: SheetDesciptionOptions[];
 };
 
-export type ResultOfImport = {
-  header?: {};
-  footer?: {};
-  table?: any[];
+export type FilterImportHandler = {
+  sheetIndex: number;
+  sheetName?: string;
+  section: SheetSection;
 };

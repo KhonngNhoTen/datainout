@@ -1,7 +1,11 @@
 import * as exceljs from "exceljs";
-import { Exporter } from "./Exporter";
-import { CellFormat, ExcelFormat, ReportData } from "../type";
-export class ExcelExporter implements Exporter {
+import { PassThrough } from "stream";
+import { Exporter } from "./Exporter.js";
+import { CellFormat, CreateStreamOpts, ExcelFormat, ReportData, SheetFormat } from "../type.js";
+import { getFileExtension } from "../../helper/get-file-extension.js";
+import { WriterStreanm } from "./stream/WriterStream.js";
+import { ExcelWriterStream } from "./stream/ExcelWriterStream.js";
+export class ExcelExporter extends Exporter {
   excelFormat: ExcelFormat = [];
   workBook?: exceljs.Workbook;
 
@@ -35,6 +39,7 @@ export class ExcelExporter implements Exporter {
 
   private createSheet(sheet: exceljs.Worksheet, reportData: ReportData, sheetIndex: number) {
     const excelFormat = this.excelFormat[sheetIndex];
+    sheet = this.mergesCells(sheet, excelFormat);
     // Add cells in header-section
     const headerCells = excelFormat.cellFomats.filter((e) => e.section === "header");
     headerCells.forEach((headerCell) => {
@@ -69,19 +74,41 @@ export class ExcelExporter implements Exporter {
 
     // Add cells in footer-section
 
-    // Set column's width
-    excelFormat.columnWidths?.forEach((colW, i) => {
-      sheet.columns[i].width = colW;
-    });
-
-    // Set header and footer height
-    const rowHeights = excelFormat.rowHeights;
-    Object.keys(rowHeights).forEach((rowIndex) => (sheet.getRow(rowHeights[rowIndex]).height = rowHeights[rowIndex]));
+    sheet = this.setWidthsAndHeights(sheet, excelFormat);
   }
 
-  private createCell(sheet: exceljs.Worksheet, cellFormat: CellFormat, cellValue: any, address?: string) {
+  protected createCell(sheet: exceljs.Worksheet, cellFormat: CellFormat, cellValue: any, address?: string) {
     const cell = sheet.getCell(address ?? cellFormat.address);
     cell.style = cellFormat.style;
     cell.value = cellFormat.isHardCell ? cellFormat.value.hardValue : cellValue;
+  }
+
+  protected mergesCells(sheet: exceljs.Worksheet, sheetFormat: SheetFormat) {
+    if (sheetFormat.merges)
+      Object.keys(sheetFormat.merges).forEach((masterCell: string) => {
+        const { top, left, right, bottom } = sheetFormat.merges[masterCell].model;
+        sheet.mergeCells(top, left, bottom, right);
+      });
+
+    return sheet;
+  }
+
+  protected setWidthsAndHeights(sheet: exceljs.Worksheet, sheetFormat: SheetFormat) {
+    // Set column's width
+    sheetFormat.columnWidths?.forEach((colW, i) => {
+      if (sheet.columns[i]) sheet.columns[i].width = colW;
+    });
+
+    // Set header and footer height
+    const rowHeights = sheetFormat.rowHeights;
+    Object.keys(rowHeights).forEach((rowIndex) => {
+      if (rowHeights[rowIndex]) sheet.getRow(rowHeights[rowIndex]).height = rowHeights[rowIndex];
+    });
+
+    return sheet;
+  }
+
+  writerStream(opts: CreateStreamOpts): WriterStreanm {
+    return new ExcelWriterStream(opts, this.excelFormat);
   }
 }

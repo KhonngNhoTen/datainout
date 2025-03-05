@@ -4,7 +4,7 @@
   "main": "./dist/index.js",
   "types": "./dist/type.d.ts",
   "scripts": {
-    "build": "rm -r ./dist & tsc",
+    "build": "rm -r ./dist && tsup",
     "publish": "npm run build && npm publish --access public",
     "format": "npx prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\""
   },
@@ -27,6 +27,33 @@
     "commander": "^13.0.0",
     "dayjs": "^1.11.13",
     "exceljs": "^4.4.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./reporters": {
+      "import": {
+        "import": "./dist/reporters/index.js",
+        "types": "./dist/reporters/index.d.ts"
+      },
+      "require": {
+        "require": "./dist/reporters/index.cjs",
+        "types": "./dist/reporters/index.d.cts"
+      }
+    },
+    "./importers": {
+      "import": {
+        "import": "./dist/importers/index.js",
+        "types": "./dist/importers/index.d.ts"
+      },
+      "require": {
+        "require": "./dist/importers/index.cjs",
+        "types": "./dist/importers/index.d.cts"
+      }
+    }
   },
   "bin": {
     "import:convert": "./dist/bin/import-convert.script.js",

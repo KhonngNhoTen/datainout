@@ -1,8 +1,10 @@
 import * as fs from "fs/promises";
-import { ReportData } from "../type";
-import { Exporter } from "./Exporter";
+import { CreateStreamOpts, ReportData } from "../type.js";
+import { Exporter } from "./Exporter.js";
 import puppeteer from "puppeteer";
-import { HtmlExporter } from "./Html.exporter";
+import { HtmlExporter } from "./Html.exporter.js";
+import { PassThrough } from "stream";
+import { WriterStreanm } from "./stream/WriterStream.js";
 
 export class PdfExporter implements Exporter {
   private htmlExporter = new HtmlExporter();
@@ -52,5 +54,9 @@ export class PdfExporter implements Exporter {
 
     await page.setContent(contentHtml, { waitUntil: "networkidle0" });
     return { page, browser };
+  }
+
+  writerStream(opts: CreateStreamOpts): WriterStreanm {
+    throw new Error("PDF not support writerStream");
   }
 }

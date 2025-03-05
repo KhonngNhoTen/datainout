@@ -1,9 +1,4 @@
-import { SheetSection } from "../type";
-
-export type FilterImportHandler = {
-  sheetIndex: number;
-  section: SheetSection;
-};
+import { FilterImportHandler } from "../type.js";
 
 export abstract class ImporterHandler {
   async run(data: any, filter: FilterImportHandler) {

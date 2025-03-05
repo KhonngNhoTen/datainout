@@ -1,15 +1,19 @@
-import { CellDescription, ImportFileDesciptionOptions, SheetDesciptionOptions, SheetSection } from "../type";
+import { CellDescription, TemplateExcelImportOptions, SheetDesciptionOptions, SheetSection } from "../type.js";
 
 export class SheetDesciption {
   startTable: number;
   endTable?: number;
   content: Array<CellDescription>;
   index: number;
+  keyIndex: number = 1;
+  name?: string;
   constructor(opts: SheetDesciptionOptions, index: number) {
     this.startTable = opts.startTable ?? 1;
     this.endTable = opts.endTable;
     this.content = opts.content;
     this.index = index;
+    this.name = opts.name;
+    this.keyIndex = opts.keyIndex ?? 1;
   }
 
   findCellByAddress(address: string, rowIndex: number) {
@@ -29,7 +33,7 @@ export class SheetDesciption {
 
 export class ImportFileDesciption {
   sheets: SheetDesciption[];
-  constructor(opts: ImportFileDesciptionOptions) {
+  constructor(opts: TemplateExcelImportOptions) {
     this.sheets = opts.sheets.map((val, index) => new SheetDesciption(val, index));
   }
 }
