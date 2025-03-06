@@ -43,7 +43,6 @@ export class ExcelExporter extends Exporter {
 
   private createSheet(sheet: exceljs.Worksheet, reportData: ReportData, sheetIndex: number) {
     const excelFormat = this.excelFormat[sheetIndex];
-    sheet = this.mergesCells(sheet, excelFormat);
     // Add cells in header-section
     const headerCells = excelFormat.cellFomats.filter((e) => e.section === "header");
     headerCells.forEach((headerCell) => {
@@ -66,7 +65,7 @@ export class ExcelExporter extends Exporter {
             sheet,
             contentTable,
             (reportData.table as any)[i][contentTable?.value?.fieldName ?? ""],
-            `${contentTable.address}${excelFormat.beginTableAt + 1}`
+            `${contentTable.address}${excelFormat.beginTableAt}`
           );
         });
         isFirstRow = false;
@@ -77,7 +76,7 @@ export class ExcelExporter extends Exporter {
     });
 
     // Add cells in footer-section
-
+    sheet = this.mergesCells(sheet, excelFormat);
     sheet = this.setWidthsAndHeights(sheet, excelFormat);
   }
 
