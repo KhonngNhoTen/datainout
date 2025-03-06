@@ -1,6 +1,6 @@
 <div align="center">
   <a href="https://github.com/KhonngNhoTen/inoutjs">
-    <img src="https://i.postimg.cc/DZKXjXL6/datainout-logo.png">
+    <img src="https://i.postimg.cc/P5WhbvfT/datainout-logo.png">
   </a>
 </div>  
 <br>
