@@ -63,6 +63,7 @@ export class ExcelImportTemplateGenerator {
         endTableAt: sheet.endTableAtAt,
         name: sheet.name,
         beginTableAt: sheet.beginTableAt,
+        keyIndex: sheet.columnIndex,
       });
       this.currentSheet = [];
     }

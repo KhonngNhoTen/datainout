@@ -2,7 +2,6 @@ import { PassThrough } from "stream";
 import { WriterStreanm } from "./WriterStream.js";
 import * as exceljs from "exceljs";
 import { CellFormat, CreateStreamOpts, ExcelFormat, SheetFormat } from "../../type.js";
-import { SheetSection } from "../../../type.js";
 
 export class ExcelWriterStream implements WriterStreanm {
   private _workBookWriter: exceljs.stream.xlsx.WorkbookWriter;
@@ -118,7 +117,7 @@ export class ExcelWriterStream implements WriterStreanm {
     const workSheet = this._workSheet[sheetIndex];
     const sheetFormat = this._excelFormat[sheetIndex];
     const rowHeaders = [];
-    for (let i = 1; i <= sheetFormat.beginTableAt; i++) {
+    for (let i = 1; i < sheetFormat.beginTableAt; i++) {
       const row = workSheet.addRow([]);
       const formats = cellFormats.filter((e) => e.fullAddress.row === i);
       formats.forEach((format) => this.updateCell(header ?? {}, format, row.getCell(format.fullAddress.col)));
@@ -140,7 +139,7 @@ export class ExcelWriterStream implements WriterStreanm {
 
     for (let i = 1; i <= numberOfRowFooter; i++) {
       const row = workSheet.addRow([]);
-      const formats = cellFormats.filter((e) => i === e.fullAddress.row + endTableAt);
+      const formats = cellFormats.filter((e) => this._indexRow === e.fullAddress.row + endTableAt);
       formats.forEach((format) => this.updateCell(footer ?? {}, format, row.getCell(format.fullAddress.col)));
       row.commit();
       this._indexRow++;
@@ -153,12 +152,11 @@ export class ExcelWriterStream implements WriterStreanm {
     if (cellFormats.length === 0) return;
 
     const workSheet = this._workSheet[sheetIndex];
-    const numberOfTitleTable = Math.max(...cellFormats.map((e) => e.fullAddress.row)) - this._indexRow;
+    const numberOfTitleTable = new Set(cellFormats.map((e) => e.fullAddress.row)).size;
     const titleTables = cellFormats.filter((e) => e.section === "table" && !e.isVariable);
-
     for (let i = 0; i < numberOfTitleTable; i++) {
       const row = workSheet.addRow([]);
-      const formats = titleTables.filter((e) => i === e.fullAddress.row);
+      const formats = titleTables.filter((e) => this._indexRow === e.fullAddress.row);
       formats.forEach((format) => this.updateCell({}, format, row.getCell(format.fullAddress.col)));
       row.commit();
       this._indexRow++;

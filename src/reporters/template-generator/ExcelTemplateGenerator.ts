@@ -53,7 +53,8 @@ export class Excel2ExcelTemplateGenerator extends TemplateGenerator {
     this.excelFormat.push(this.currentSheetFormat);
     this.currentSheetFormat = { cellFomats: [], beginTableAt: 1, rowHeights: {}, columnWidths: [] };
   }
-
+  generate(buffer: Buffer): Promise<any>;
+  generate(fileSample: string): Promise<any>;
   async generate(arg: unknown) {
     if (arg instanceof Buffer) await this.excelReaderHelper.load(arg);
     else await this.excelReaderHelper.load(pathReport(arg + "", "excelSampleDir"));

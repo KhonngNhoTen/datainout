@@ -56,23 +56,13 @@ export class ExcelExporter extends Exporter {
     });
 
     const contentTables = excelFormat.cellFomats.filter((e) => e.section === "table" && e.isVariable);
-    let isFirstRow = true;
-    reportData.table?.forEach((row, i) => {
-      // is first row in table
-      if (isFirstRow) {
-        contentTables.forEach((contentTable) => {
-          this.createCell(
-            sheet,
-            contentTable,
-            (reportData.table as any)[i][contentTable?.value?.fieldName ?? ""],
-            `${contentTable.address}${excelFormat.beginTableAt}`
-          );
-        });
-        isFirstRow = false;
-      } else {
-        const rowValues = Object.keys(row).map((cell) => row[cell]);
-        sheet.addRow(rowValues, "i");
-      }
+    reportData.table?.forEach((rowData, i) => {
+      const row = sheet.addRow([]);
+      contentTables.forEach((e) => {
+        const cell = row.getCell(e.fullAddress.col);
+        cell.style = e.style;
+        cell.value = rowData[e.value?.fieldName ?? ""];
+      });
     });
 
     // Add cells in footer-section

@@ -1,9 +1,10 @@
 import * as exceljs from "exceljs";
 import { CellType, SheetSection } from "../importers/type.js";
-const TITLE_TABLE_SYNTAX = "$$[title]";
+// const TITLE_TABLE_SYNTAX = "$$[title]";
 const END_TABLE_SYNYAX = "$$[br]";
 const VARIABLE_TABLE_SYNTAX = "$$";
 const VARIABLE_SYNTAX = "$";
+const INDEX_COLUMN_TABLE_SYNTAX = "$$*";
 
 export type CellDataHelper = {
   sheetIndex: number;
@@ -28,6 +29,7 @@ export type RowDataHelper = {
 
 export type SheetDataHelper = {
   sheetIndex: number;
+  columnIndex: number;
   name: string;
   detail: exceljs.Worksheet;
   beginTableAt: number;
@@ -45,6 +47,7 @@ export class ExcelReaderHelper {
   private beginTable: number = -1;
   private endTableAt: number = -1;
   private rowCount: number = 0;
+  private columnIndex = 1;
 
   private onSheet?: (row: SheetDataHelper) => void;
   private onRow?: (row: RowDataHelper) => void;
@@ -94,6 +97,7 @@ export class ExcelReaderHelper {
         detail: workSheet,
         endTableAtAt: this.endTableAt,
         rowCount: this.rowCount,
+        columnIndex: this.columnIndex,
       });
   }
 
@@ -107,7 +111,7 @@ export class ExcelReaderHelper {
       rowIndex,
       section,
       sheetIndex,
-      label: !isVariable ? cell.value + "" : undefined,
+      label: this.getLabel(cell.value + "", isVariable),
       variableValue: isVariable ? this.getVariableValue(cell) : undefined,
       beginTableAt: this.beginTable,
       endTableAtAt: this.endTableAt,
@@ -123,13 +127,19 @@ export class ExcelReaderHelper {
       if (isVariable) {
         this.beginTable = this.getBeginTable(cell, rowIndex) ?? this.beginTable;
         this.endTableAt = this.getendTableAt(cell, rowIndex) ?? this.endTableAt;
+      } else {
+        if (cell && cell.includes(INDEX_COLUMN_TABLE_SYNTAX)) {
+          this.columnIndex = i + 1;
+          this.beginTable = rowIndex;
+        }
       }
     }
   }
+
   private getBeginTable(cellValue: any, rowIndex: number) {
     cellValue = cellValue + "";
     if (this.isBeginTableNull() && cellValue.includes(VARIABLE_TABLE_SYNTAX)) {
-      if (cellValue.includes(TITLE_TABLE_SYNTAX)) return rowIndex + 1;
+      if (cellValue.includes(INDEX_COLUMN_TABLE_SYNTAX)) return rowIndex;
       return rowIndex;
     }
     return undefined;
@@ -151,13 +161,21 @@ export class ExcelReaderHelper {
   }
 
   private isVariable(cellValue: any) {
-    return (cellValue + "").includes("$");
+    cellValue = cellValue + "";
+    if (cellValue.includes(INDEX_COLUMN_TABLE_SYNTAX)) return false;
+    return cellValue.includes(VARIABLE_SYNTAX);
+  }
+
+  private getLabel(label: string, isVariable: boolean) {
+    if (isVariable) return undefined;
+    if (label.includes(INDEX_COLUMN_TABLE_SYNTAX)) return label.split("->").pop();
+    return label;
   }
 
   private getSection(rowIndex: number): SheetSection {
     if (this.isBeginTableNull()) return "header";
     if (!this.isBeginTableNull() && this.isendTableAtNull()) return "table";
-    if (!this.isendTableAtNull()) return "footer";
+    if (!this.isendTableAtNull() && rowIndex > this.endTableAt) return "footer";
     return "table";
 
     // let section: SheetSection = "table";
