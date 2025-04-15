@@ -1,19 +1,53 @@
-import { PassThrough } from "stream";
-import { pathReport } from "../../helper/path-file.js";
-import { CreateStreamOpts, ReportData } from "../type.js";
-import { WriterStreanm } from "./stream/WriterStream.js";
+import { ExporterOptions, ExporterOutputType, ExporterMethodType } from "../../common/types/exporter.type.js";
+import { EventType } from "../../common/types/reader.type.js";
+import { Writable } from "stream";
 
 export abstract class Exporter {
-  protected templatePath: string;
-  protected opts: any;
-  constructor(templatePath: string, opts: any) {
-    this.templatePath = pathReport(templatePath ?? "", "templateDir");
+  protected outputType: ExporterOutputType;
+  protected methodType: ExporterMethodType;
+  protected name: string;
 
-    this.opts = opts;
+  protected template: any;
+
+  constructor(opts: ExporterOptions) {
+    this.name = opts.name;
+    this.outputType = opts.outputType;
+    this.methodType = opts.methodType;
   }
 
-  abstract writeFile(reportData: ReportData | ReportData[], path: string): Promise<any>;
-  abstract buffer(reportData: ReportData | ReportData[]): Promise<Buffer>;
+  abstract run(templatePath: string, data: any): Promise<Buffer | Writable>;
+}
 
-  abstract writerStream(opts: CreateStreamOpts): WriterStreanm;
+export abstract class ExporterStream extends Exporter {
+  protected listEvents: Partial<EventType> = {};
+  constructor(opts: Omit<ExporterOptions, "methodType">) {
+    super({ ...opts, methodType: "stream" });
+  }
+
+  on<EventKey extends keyof EventType>(key: EventKey, func: EventType[EventKey]): this {
+    this.listEvents[key] = func;
+    return this;
+  }
+
+  onFinish(func: EventType["rFinish"]): void {
+    this.listEvents.rFinish = func;
+  }
+
+  onBegin(func: EventType["rBegin"]): void {
+    this.listEvents.rBegin = func;
+  }
+
+  onData(func: EventType["rData"]): void {
+    this.listEvents.rData = func;
+  }
+
+  onEnd(func: EventType["rEnd"]): void {
+    this.listEvents.rEnd = func;
+  }
+
+  onError(func: EventType["rError"]): void {
+    this.listEvents.rError = func;
+  }
+
+  abstract add(chunks: any[]): Promise<any>;
 }

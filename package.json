@@ -34,21 +34,6 @@
     "exceljs": "^4.4.0"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    },
-    "./reporters": {
-      "import": {
-        "import": "./dist/reporters/index.js",
-        "types": "./dist/reporters/index.d.ts"
-      },
-      "require": {
-        "require": "./dist/reporters/index.cjs",
-        "types": "./dist/reporters/index.d.cts"
-      }
-    },
     "./importers": {
       "import": {
         "import": "./dist/importers/index.js",
@@ -61,9 +46,7 @@
     }
   },
   "bin": {
-    "datainout import:template": "./dist/bin/import-convert.script.js",
-    "datainout report:template excel-excel": "./dist/bin/template-report/excel-generate.js",
-    "init": "./dist/bin/init-datainout.script.js"
+    "datainout": "./dist/bin/cli.cjs"
   },
   "peerDependencies": {
     "ejs": "^3.1.10",
