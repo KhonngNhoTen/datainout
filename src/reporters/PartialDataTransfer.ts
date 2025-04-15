@@ -1,7 +1,7 @@
 export abstract class PartialDataTransfer {
   protected callBack?: (items: any[] | null, itemCount: number, total: number, hasNext: boolean) => Promise<any>;
 
-  protected sleepTime: number = 200;
+  protected sleepTime: number = 60;
 
   constructor(sleepTime: number) {
     this.sleepTime = sleepTime;
