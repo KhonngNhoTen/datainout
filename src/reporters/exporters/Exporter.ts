@@ -12,7 +12,7 @@ export abstract class Exporter {
   constructor(opts: ExporterOptions) {
     this.name = opts.name;
     this.outputType = opts.outputType;
-    this.methodType = opts.methodType;
+    this.methodType = opts?.methodType ?? "full-load";
   }
 
   abstract run(templatePath: string, data: any): Promise<Buffer | Writable>;

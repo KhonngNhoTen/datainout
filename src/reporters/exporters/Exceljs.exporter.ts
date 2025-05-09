@@ -25,7 +25,7 @@ export class ExceljsExporter extends Exporter {
   };
 
   constructor() {
-    super({ name: ExceljsExporter.name, outputType: "excel", methodType: "full-load" });
+    super({ name: ExceljsExporter.name, outputType: "excel" });
   }
 
   async run(templatePath: string, data: TableData): Promise<any> {

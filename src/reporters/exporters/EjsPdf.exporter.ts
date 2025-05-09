@@ -7,7 +7,7 @@ export class EjsPdfExporter extends Exporter {
   protected override template: string = "";
 
   constructor() {
-    super({ methodType: "full-load", name: EjsPdfExporter.name, outputType: "pdf" });
+    super({ name: EjsPdfExporter.name, outputType: "pdf" });
   }
 
   async run(templatePath: string, data: PageData): Promise<Buffer> {

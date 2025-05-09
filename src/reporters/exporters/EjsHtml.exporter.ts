@@ -4,7 +4,7 @@ import * as ejs from "ejs";
 
 export class EjsHtmlExporter extends Exporter {
   constructor() {
-    super({ methodType: "full-load", name: EjsHtmlExporter.name, outputType: "html" });
+    super({ name: EjsHtmlExporter.name, outputType: "html" });
   }
   async run(templatePath: string, data: PageData): Promise<Buffer> {
     return Buffer.from(ejs.render(templatePath, data));

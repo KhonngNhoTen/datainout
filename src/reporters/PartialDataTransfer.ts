@@ -1,5 +1,5 @@
 export abstract class PartialDataTransfer {
-  protected callBack?: (items: any[] | null, itemCount: number, total: number, hasNext: boolean) => Promise<any>;
+  protected callBack?: (items: any[] | null) => Promise<any>;
 
   protected sleepTime: number = 60;
 
@@ -7,18 +7,18 @@ export abstract class PartialDataTransfer {
     this.sleepTime = sleepTime;
   }
 
-  start(callBack: (items: any[] | null, itemCount: number, total: number, hasNext: boolean) => Promise<any>) {
+  async start(callBack: (items: any[] | null) => Promise<any>) {
     this.callBack = callBack;
-    (async () => {
-      const { hasNext, itemCount, items, total } = await this.partialData();
-      if (this.callBack) await this.callBack(items, itemCount, total, hasNext);
+    const { items, hasNext } = await this.partialData();
+    while (hasNext) {
+      if (this.callBack) await this.callBack(items);
       await this.sleep(this.sleepTime);
-    })();
+    }
   }
 
-  sleep(ms: number) {
+  private sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  abstract partialData(): Promise<{ items: any[] | null; itemCount: number; total: number; hasNext: boolean }>;
+  abstract partialData(): Promise<{ items: any[] | null; hasNext: boolean }>;
 }

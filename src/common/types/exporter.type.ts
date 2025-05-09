@@ -4,5 +4,5 @@ export type ExporterMethodType = "full-load" | "stream";
 export type ExporterOptions = {
   name: string;
   outputType: ExporterOutputType;
-  methodType: ExporterMethodType;
+  methodType?: ExporterMethodType;
 };
