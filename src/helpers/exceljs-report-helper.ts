@@ -29,12 +29,13 @@ export function addRow(value: any, cellsOpts: CellReportOptions[], workSheet: ex
     const cell = row.getCell(cellsOpt.fullAddress.col);
     setCell(value, cellsOpt, cell);
   }
+
   return workSheet;
 }
 
 export function setHeader(header: any, cellsOpts: CellReportOptions[], beginTableAt: number, workSheet: exceljs.Worksheet) {
   const rowHeaders = [];
-  for (let i = 1; i < beginTableAt; i++) {
+  for (let i = 1; i <= beginTableAt; i++) {
     const row = workSheet.addRow([]);
     const formats = cellsOpts.filter((e) => e.fullAddress.row === i);
     formats.forEach((format) => setCell(header ?? {}, format, row.getCell(format.fullAddress.col)));

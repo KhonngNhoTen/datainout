@@ -1,3 +1,4 @@
+import { TableData } from "../common/types/common-type.js";
 import { FilterImportHandler } from "../common/types/importer.type.js";
 
 export abstract class ImporterHandler {
@@ -10,5 +11,5 @@ export abstract class ImporterHandler {
     return true;
   }
 
-  abstract handle(result: ImporterHandler): Promise<any>;
+  abstract handle(tableData: TableData): Promise<any>;
 }

@@ -5,9 +5,8 @@ import { TableDataImportHelper } from "../../../helpers/table-data-import-helper
 import { FilterImportHandler } from "../../../common/types/importer.type.js";
 import { CellDataHelper, ExcelReaderHelper } from "../../../helpers/excel-reader-helper.js";
 import { BaseReaderStream } from "../BaserReaderStream.js";
-import { IReader } from "../../../common/decorators/IReader.decorator.js";
+import { SheetSection } from "../../../common/types/common-type.js";
 
-@IReader()
 export class ExcelJsStreamReader extends BaseReaderStream {
   private excelReaderHelper: ExcelReaderHelper = new ExcelReaderHelper();
   constructor() {
@@ -16,6 +15,12 @@ export class ExcelJsStreamReader extends BaseReaderStream {
   }
 
   public async load(arg: Readable): Promise<any> {
+    this.excelReaderHelper = new ExcelReaderHelper({
+      beginTables: this.templates.map((e) => e.beginTableAt),
+      endTableAts: this.templates.map((e) => e.endTableAt),
+      columnIndexes: this.templates.map((e) => e.keyTableAt),
+    });
+
     const workBookReader = new exceljs.stream.xlsx.WorkbookReader(arg, {
       worksheets: "emit",
     });
@@ -24,19 +29,18 @@ export class ExcelJsStreamReader extends BaseReaderStream {
     const that = this;
 
     (workBookReader as any).on("worksheet", async function (worksheet: exceljs.Worksheet) {
-      that.sheetIndex = worksheet.id;
+      that.sheetIndex = worksheet.id - 1;
       that.groupCellDescs = that.formatSheet(that.sheetIndex);
 
       if (that.listEvents.rBegin) that.listEvents.rBegin(worksheet.name);
 
-      (async () => await that.addSheet(worksheet))();
-
       (worksheet as any).on("row", function (row: exceljs.Row) {
         if (that.listEvents.rData) that.listEvents.rData();
-        (async () => await that.addRow(row))();
+        that.addRow(row);
       });
 
       (worksheet as any).on("finished", function () {
+        that.addSheet(worksheet);
         if (that.listEvents.rEnd) that.listEvents.rEnd(worksheet.name);
       });
     });
@@ -48,36 +52,33 @@ export class ExcelJsStreamReader extends BaseReaderStream {
     return this;
   }
 
-  private async addCell(cell: exceljs.Cell) {
-    return this.excelReaderHelper.getCell(cell, cell.fullAddress.row, this.sheetIndex);
-  }
-
-  private async addRow(row: exceljs.Row) {
+  private addRow(row: exceljs.Row) {
     const cells: CellDataHelper[] = [];
     const sheet = this.templates[this.sheetIndex];
-    const rowData = this.excelReaderHelper.getRow(row, sheet.beginTableAt, sheet.endTableAt);
-    for (let i = 0; i < row.cellCount; i++) cells.push(await this.addCell(row.getCell(i + 1)));
+    const section = this.excelReaderHelper.getSection(row.number, this.sheetIndex, (row.values as any[]).slice(1));
+    for (let i = 0; i < row.cellCount; i++)
+      cells.push(this.excelReaderHelper.getCell(row.getCell(i + 1), row.number, this.sheetIndex, section));
 
-    const isTrigger = this.tableDataImportHelper.push(cells, sheet, this.groupCellDescs[cells[0].section], this.chunkSize);
+    const trigger = this.tableDataImportHelper.push(cells, sheet, this.groupCellDescs[section], this.chunkSize);
 
-    if (isTrigger) {
+    if (trigger) {
       const filter: FilterImportHandler = {
-        section: rowData.section,
-        sheetIndex: rowData.rowIndex,
+        section: section,
+        sheetIndex: sheet.sheetIndex,
         sheetName: sheet.sheetName,
       };
-      const data = this.tableDataImportHelper.get();
-      await this.callHandlers(data, filter);
+      const data = this.tableDataImportHelper.pop();
+      (async () => await this.callHandlers(data, filter))();
     }
   }
 
-  private async addSheet(sheet: exceljs.Worksheet) {
+  private addSheet(sheet: exceljs.Worksheet) {
     const filter: FilterImportHandler = {
       section: "footer",
-      sheetIndex: this.sheetIndex,
+      sheetIndex: sheet.id,
       sheetName: sheet.name,
     };
-    const data = this.tableDataImportHelper.get();
-    await this.callHandlers(data, filter);
+    const data = this.tableDataImportHelper.pop();
+    (async () => await this.callHandlers(data, filter))();
   }
 }

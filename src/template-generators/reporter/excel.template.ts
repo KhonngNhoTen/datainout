@@ -21,13 +21,13 @@ export class ExcelTemplateReport extends TemplateGenerator {
   constructor(template: string) {
     super(template, pathReport);
     this.excelReaderHelper = new ExcelReaderHelper({
-      onCell: async (cell) => this.onCell(cell),
-      onRow: async (data: any) => this.onRow(data),
-      onSheet: async (data: any) => this.onSheet(data),
+      onCell: async (cell) => await this.onCell(cell),
+      onRow: async (data: any) => await this.onRow(data),
+      onSheet: async (data: any) => await this.onSheet(data),
     });
   }
 
-  private onCell(cell: CellDataHelper) {
+  private async onCell(cell: CellDataHelper) {
     if ((cell.detail as any)._value.model.type !== exceljs.ValueType.Merge) {
       const fullAddress = cell.detail.fullAddress;
       if (cell.section === "footer") fullAddress.row = fullAddress.row - (cell.endTableAtAt ?? 0);
@@ -43,12 +43,12 @@ export class ExcelTemplateReport extends TemplateGenerator {
     }
   }
 
-  private onRow(row: RowDataHelper) {
+  private async onRow(row: RowDataHelper) {
     if (row.beginTableAt && row.rowIndex < row.beginTableAt) this.currentSheet.rowHeights[row.rowIndex] = row.detail.height;
     if (row.endTableAtAt && row.rowIndex > row.endTableAtAt) this.currentSheet.rowHeights[row.rowIndex] = row.detail.height;
   }
 
-  private onSheet(sheet: SheetDataHelper) {
+  private async onSheet(sheet: SheetDataHelper) {
     this.currentSheet.columnWidths = sheet.detail.columns.map((col) => col.width);
     this.currentSheet.beginTableAt = sheet.beginTableAt;
     this.currentSheet.endTableAt = sheet.endTableAtAt;

@@ -31,7 +31,7 @@ export class ExceljsExporter extends Exporter {
   async run(templatePath: string, data: TableData): Promise<any> {
     const sheetIndex = 0;
     const workBook = new exceljs.Workbook();
-    const workSheet = workBook.getWorksheet();
+    const workSheet = workBook.addWorksheet();
     if (!workSheet) return;
     this.groupCellDescs = this.getGroupCellDescs(templatePath);
 
@@ -42,12 +42,15 @@ export class ExceljsExporter extends Exporter {
       this.template.sheets[0].beginTableAt,
       workSheet
     );
+
     // add Table
     ///// add title table
-    setTitleTable(
-      this.groupCellDescs.table.filter((e) => e.section === "table" && !e.isVariable),
-      workSheet
-    );
+    // if (data?.header && this?.groupCellDescs?.header)
+    //   setTitleTable(
+    //     this.groupCellDescs.header.filter((e) => e.section === "header" && !e.isVariable),
+    //     workSheet
+    //   );
+
     ///// add Content
     data?.table?.forEach((raw) => {
       addRow(
@@ -58,15 +61,16 @@ export class ExceljsExporter extends Exporter {
     });
 
     // add footer
-    setFooter(
-      data.footer,
-      this.groupCellDescs.table.filter((e) => e.section === "footer"),
-      workSheet
-    );
+    if (this?.groupCellDescs?.footer && data.footer)
+      setFooter(
+        data.footer,
+        this.groupCellDescs.footer.filter((e) => e.section === "footer"),
+        workSheet
+      );
     // Add cells in footer-section
     mergeCells(workSheet, this.template.sheets[sheetIndex]);
     setWidthsAndHeights(workSheet, this.template.sheets[sheetIndex]);
-    return workBook.xlsx.writeBuffer();
+    return await workBook.xlsx.writeBuffer();
   }
 
   getGroupCellDescs(templatePath: string) {

@@ -1,6 +1,9 @@
 import { ImporterReaderType } from "../../common/types/importer.type.js";
 import { ReaderFactoryItem } from "../../common/types/reader.type.js";
 import { BaseReader } from "./BaseReader.js";
+import { ExcelJsCsvReader } from "./csv/ExceljsCsvReader.js";
+import { ExcelJsReader } from "./exceljs/ExcelJsReader.js";
+import { ExcelJsStreamReader } from "./exceljs/ExcelJsStreamReader.js";
 
 export class ReaderFactory {
   protected readers: { [k in ImporterReaderType]: ReaderFactoryItem[] } = {
@@ -11,13 +14,13 @@ export class ReaderFactory {
 
   constructor() {
     this.readers = {
-      "excel-stream": [],
-      csv: [],
-      excel: [],
+      "excel-stream": [{ reader: new ExcelJsStreamReader(), isDefault: true, name: ExcelJsStreamReader.name }],
+      csv: [{ reader: new ExcelJsCsvReader(), isDefault: true, name: ExcelJsCsvReader.name }],
+      excel: [{ reader: new ExcelJsReader(), isDefault: true, name: ExcelJsReader.name }],
     };
   }
 
-  add(reader: BaseReader, name?: string, isDefault?: boolean) {
+  add(reader: BaseReader, isDefault?: boolean, name?: string) {
     const type = reader.getType();
     isDefault = isDefault ?? false;
     if (!this.readers[type]) {

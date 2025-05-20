@@ -43,6 +43,26 @@
         "require": "./dist/importers/index.cjs",
         "types": "./dist/importers/index.d.cts"
       }
+    },
+    "./reporters": {
+      "import": {
+        "import": "./dist/reporters/index.js",
+        "types": "./dist/reporters/index.d.ts"
+      },
+      "require": {
+        "require": "./dist/reporters/index.cjs",
+        "types": "./dist/reporters/index.d.cts"
+      }
+    },
+    "./template-generators": {
+      "import": {
+        "import": "./dist/template-generators/index.js",
+        "types": "./dist/template-generators/index.d.ts"
+      },
+      "require": {
+        "require": "./dist/template-generators/index.cjs",
+        "types": "./dist/template-generators/index.d.cts"
+      }
     }
   },
   "bin": {

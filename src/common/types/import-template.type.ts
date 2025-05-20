@@ -1,7 +1,9 @@
+import { ImporterHandler } from "../../importers/ImportHandler.js";
 import { BaseAttribute, SheetSection } from "./common-type.js";
+import { ImporterBaseReaderType } from "./importer.type.js";
 
 export type BaseAttributeImporter = {
-  setValue?: (attributeValue?: any, row?: any) => any;
+  setValue?: (attributeValue?: any, row?: Record<string, any>) => any;
   validate?: (val: any) => boolean;
   section: SheetSection;
 } & BaseAttribute;

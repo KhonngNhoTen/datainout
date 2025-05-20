@@ -4,8 +4,8 @@ import { CellDataHelper, ExcelReaderHelper } from "../../../helpers/excel-reader
 import { FilterImportHandler } from "../../../common/types/importer.type.js";
 import { BaseReader } from "../BaseReader.js";
 import { IReader } from "../../../common/decorators/IReader.decorator.js";
+import { ReaderContainer } from "../ReaderFactory.js";
 
-@IReader()
 export class ExcelJsCsvReader extends BaseReader {
   private excelReaderHelper: ExcelReaderHelper = new ExcelReaderHelper();
 
@@ -15,6 +15,13 @@ export class ExcelJsCsvReader extends BaseReader {
   public async load(arg: unknown): Promise<any> {
     let workSheet: exceljs.Worksheet;
     const workBook = new exceljs.Workbook();
+
+    this.excelReaderHelper = new ExcelReaderHelper({
+      beginTables: this.templates.map((e) => e.beginTableAt),
+      endTableAts: this.templates.map((e) => e.endTableAt),
+      columnIndexes: this.templates.map((e) => e.keyTableAt),
+    });
+
     if (arg instanceof Buffer) {
       const stream = new Readable();
       workSheet = await workBook.csv.read(stream);
@@ -27,7 +34,7 @@ export class ExcelJsCsvReader extends BaseReader {
     }
 
     // End file
-    const data = this.tableDataImportHelper.get();
+    const data = this.tableDataImportHelper.pop();
     await this.callHandlers(data, {
       section: "footer",
       sheetIndex: 0,
@@ -38,7 +45,14 @@ export class ExcelJsCsvReader extends BaseReader {
   private async readRow(row: exceljs.Row) {
     const cells: CellDataHelper[] = [];
     for (let i = 0; i < row.cellCount; i++) {
-      cells.push(this.excelReaderHelper.getCell(row.getCell(i + 1), row.number, 0));
+      cells.push(
+        this.excelReaderHelper.getCell(
+          row.getCell(i + 1),
+          row.number,
+          this.sheetIndex,
+          this.excelReaderHelper.getSection(row.number, this.sheetIndex, row.values as any[])
+        )
+      );
     }
 
     const isTrigger = this.tableDataImportHelper.push(
@@ -54,7 +68,7 @@ export class ExcelJsCsvReader extends BaseReader {
         sheetIndex: cells[0].rowIndex,
         sheetName: this.templates[this.sheetIndex].sheetName,
       };
-      const data = this.tableDataImportHelper.get();
+      const data = this.tableDataImportHelper.pop();
       await this.callHandlers(data, filter);
     }
   }

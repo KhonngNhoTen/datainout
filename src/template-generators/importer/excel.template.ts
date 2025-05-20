@@ -18,15 +18,16 @@ export class ExcelTemplateImport extends TemplateGenerator {
     super(templatePath, pathImport);
 
     this.excelReaderHelper = new ExcelReaderHelper({
-      onCell: async (data: any) => this.onCell(data),
-      onSheet: async (data: any) => this.onSheet(data),
+      onCell: async (data: any) => await this.onCell(data),
+      onSheet: async (data: any) => await this.onSheet(data),
     });
   }
 
-  private onCell(cell: CellDataHelper) {
+  private async onCell(cell: CellDataHelper) {
     if (!cell.isVariable || (cell.detail as any)._value.model.type === exceljs.ValueType.Merge) return;
     const fullAddress = cell.detail.fullAddress;
     if (cell.section === "footer") fullAddress.row = fullAddress.row - (cell.endTableAtAt ?? 0);
+
     this.currentSheet.push({
       keyName: cell.variableValue?.fieldName ?? "",
       section: cell.section,
@@ -36,7 +37,7 @@ export class ExcelTemplateImport extends TemplateGenerator {
     });
   }
 
-  private onSheet(sheet: SheetDataHelper) {
+  private async onSheet(sheet: SheetDataHelper) {
     if (this.currentSheet.length > 0) {
       this.excelContent.sheets.push({
         cells: this.currentSheet,

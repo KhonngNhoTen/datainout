@@ -1,4 +1,4 @@
-import { SheetSection } from "./common-type.js";
+import { SheetSection, TableData } from "./common-type.js";
 
 export type FilterImportHandler = {
   sheetIndex: number;
@@ -9,3 +9,5 @@ export type FilterImportHandler = {
 export type ImporterBaseReaderType = "excel" | "csv";
 export type ImporterBaseReaderStreamType = "excel-stream";
 export type ImporterReaderType = ImporterBaseReaderType | ImporterBaseReaderStreamType;
+
+export type ImporterHandlerFunction = (data: TableData, filter: FilterImportHandler) => Promise<any>;

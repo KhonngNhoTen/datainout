@@ -1,5 +1,5 @@
 import { PaperSize, Style as CellStyle, Cell, Worksheet, Location } from "exceljs";
-import { BaseAttribute, SheetSection } from "./common-type.js";
+import { SheetSection } from "./common-type.js";
 
 /** Excel report template */
 export type CellReportOptions = {

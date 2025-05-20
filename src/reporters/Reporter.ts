@@ -26,7 +26,6 @@ export class Reporter {
     if (type === "html") exporter = new EjsHtmlExporter();
     if (type === "excel") exporter = new ExceljsExporter();
     if (type === "pdf") exporter = new EjsPdfExporter();
-
     if (!exporter) throw new Error("Exporter not setup");
     return (await exporter.run(this.templatePath, data)) as Buffer;
   }
@@ -34,7 +33,7 @@ export class Reporter {
   async write(reportPath: string, type: ExporterOutputType, data: any) {
     const buffer = await this.buffer(type, data);
     reportPath = pathReport(reportPath, "reportDir");
-    await fs.writeFile(reportPath, buffer);
+    await fs.writeFile(reportPath, Uint8Array.from(buffer));
   }
 
   async stream(
