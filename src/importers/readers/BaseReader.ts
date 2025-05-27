@@ -1,5 +1,5 @@
 import { CellImportOptions, SheetImportOptions, TableImportOptions } from "../../common/types/import-template.type.js";
-import { FilterImportHandler, ImporterReaderType } from "../../common/types/importer.type.js";
+import { FilterImportHandler, ImporterHandlerFunction, ImporterReaderType } from "../../common/types/importer.type.js";
 import { BaseReaderOptions } from "../../common/types/reader.type.js";
 import { getFileExtension } from "../../helpers/get-file-extension.js";
 import { TypeParser } from "../../helpers/parse-type.js";
@@ -11,7 +11,7 @@ export abstract class BaseReader {
   private type: ImporterReaderType;
 
   protected typeParser: TypeParser;
-  protected handlers: ImporterHandler[] = [];
+  protected handlers: ImporterHandlerFunction[] = [];
   protected chunkSize: number = 20;
   protected tableDataImportHelper: TableDataImportHelper = new TableDataImportHelper();
   protected templates: SheetImportOptions[] = [];
@@ -29,7 +29,7 @@ export abstract class BaseReader {
 
   protected abstract load(arg: unknown): Promise<any>;
 
-  public async run(templatePath: string, arg: unknown, handlers: ImporterHandler[], chunkSize?: number) {
+  public async run(templatePath: string, arg: unknown, handlers: ImporterHandlerFunction[], chunkSize?: number) {
     this.sheetIndex = 0;
     this.templates = this.getTemplates(templatePath).sheets;
     this.groupCellDescs = this.formatSheet(0);
@@ -58,7 +58,8 @@ export abstract class BaseReader {
 
   protected async callHandlers(data: any, filter: FilterImportHandler) {
     for (let i = 0; i < this.handlers.length; i++) {
-      await this.handlers[i].run(data, filter);
+      const handler = this.handlers[i];
+      await handler(data, filter);
     }
   }
 

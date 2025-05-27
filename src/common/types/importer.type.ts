@@ -1,3 +1,4 @@
+import { ImporterHandler } from "../../importers/ImportHandler.js";
 import { SheetSection, TableData } from "./common-type.js";
 
 export type FilterImportHandler = {

@@ -3,9 +3,8 @@ import { pathImport } from "../helpers/path-file.js";
 import { getConfig } from "../helpers/datainout-config.js";
 import { Readable } from "stream";
 import { BaseReaderStream } from "./readers/BaserReaderStream.js";
-import { ImporterBaseReaderStreamType, ImporterBaseReaderType } from "../common/types/importer.type.js";
+import { ImporterBaseReaderStreamType, ImporterBaseReaderType, ImporterHandlerFunction } from "../common/types/importer.type.js";
 import { ReaderContainer } from "./readers/ReaderFactory.js";
-import { ImporterHandler } from "./ImportHandler.js";
 
 export class Importer {
   protected templatePath: string;
@@ -14,17 +13,17 @@ export class Importer {
     this.templatePath = `${this.templatePath}${getConfig().templateExtension ?? ".js"}`;
   }
 
-  async load(filePath: string, handlers: ImporterHandler[], type?: ImporterBaseReaderType, chunkSize?: number): Promise<any>;
-  async load(buffer: Buffer, handlers: ImporterHandler[], type?: ImporterBaseReaderType, chunkSize?: number): Promise<any>;
-  async load(arg: unknown, handlers: ImporterHandler[], type: ImporterBaseReaderType = "excel", chunkSize?: number) {
+  async load(filePath: string, handlers: ImporterHandlerFunction[], type?: ImporterBaseReaderType, chunkSize?: number): Promise<any>;
+  async load(buffer: Buffer, handlers: ImporterHandlerFunction[], type?: ImporterBaseReaderType, chunkSize?: number): Promise<any>;
+  async load(arg: unknown, handlers: ImporterHandlerFunction[], type: ImporterBaseReaderType = "excel", chunkSize?: number) {
     if (!type) type = "excel";
     const reader = ReaderContainer.get(type).reader;
     await reader.run(this.templatePath, arg as any, handlers, chunkSize);
   }
 
-  async createStream(arg: string, handlers: ImporterHandler[], type?: ImporterBaseReaderStreamType): Promise<BaseReaderStream>;
-  async createStream(arg: Readable, handlers: ImporterHandler[], type?: ImporterBaseReaderStreamType): Promise<BaseReaderStream>;
-  async createStream(arg: unknown, handlers: ImporterHandler[], type?: ImporterBaseReaderStreamType): Promise<BaseReaderStream> {
+  async createStream(arg: string, handlers: ImporterHandlerFunction[], type?: ImporterBaseReaderStreamType): Promise<BaseReaderStream>;
+  async createStream(arg: Readable, handlers: ImporterHandlerFunction[], type?: ImporterBaseReaderStreamType): Promise<BaseReaderStream>;
+  async createStream(arg: unknown, handlers: ImporterHandlerFunction[], type?: ImporterBaseReaderStreamType): Promise<BaseReaderStream> {
     if (!type) type = "excel-stream";
     const fsStream = typeof arg === "string" ? fs.createReadStream(pathImport(arg, "excelSampleDir")) : arg;
     const readerStream = ReaderContainer.get(type).reader;

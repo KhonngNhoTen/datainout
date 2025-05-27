@@ -88,8 +88,106 @@ export class TableDataImportHelper {
   }
 
   private isTriggerGroupValue(chunkSize: number, section?: SheetSection, selectedSection?: SheetSection) {
+    return this.selectedSection !== this.section || (this.container.arrayValues.length >= chunkSize && selectedSection === "table");
+  }
+}
+
+export class TableDataImportHelperV2 {
+  private typeParser: TypeParser = new TypeParser();
+  private endTableAt: number = -1;
+
+  private section?: SheetSection;
+  private preSection?: SheetSection;
+
+  private container: { value: any; arrayValues: any[] } = {
+    arrayValues: [],
+    value: {},
+  };
+
+  constructor(typeParser?: TypeParser) {
+    this.typeParser = typeParser ?? new TypeParser();
+  }
+
+  push(cells: CellDataHelper[], formattedCellImport: CellImportOptions[], chunkSize: number) {
+    this.preSection = this.section;
+    this.section = cells[0].section;
+
+    const onChangeEventSection = this.getOnChangeEventSection(chunkSize, this.preSection, this.section);
+
+    // set endTableAt
+    if (onChangeEventSection && this.section === "footer") this.endTableAt = cells[0].rowIndex;
+
+    // Map cell velue with cell description
+    let groupValues: any = {};
+
+    for (let i = 0; i < cells.length; i++) {
+      const cell = cells[i];
+      const index = formattedCellImport.findIndex((e) => this.compareByAddress(e, cell, cell.rowIndex, this.endTableAt));
+      if (index === -1) continue;
+      const cellImport = formattedCellImport[index];
+      groupValues[cellImport.keyName] = cell.detail.value;
+    }
+
+    // On event change section
+    if (onChangeEventSection) {
+      groupValues = this.formatValue(formattedCellImport, groupValues, this.typeParser);
+    }
+
+    // Push data into TableData
+    if (this.section === "table") this.container.arrayValues.push(groupValues);
+    else this.container.value = { ...this.container.value, ...groupValues };
+
+    return onChangeEventSection;
+  }
+
+  end() {
+    this.preSection = this.section;
+  }
+
+  /** get TableData */
+  pop(): TableData {
+    const result: TableData = {
+      table: [],
+      header: undefined,
+      footer: undefined,
+    };
+
+    if (this.preSection === "table") {
+      result.table = this.container.arrayValues;
+      this.container = { value: this.container.value, arrayValues: [] };
+    } else if (this.preSection) {
+      result[this.preSection] = this.container.value;
+      this.container = { value: {}, arrayValues: this.container.arrayValues };
+    }
+
+    return result;
+  }
+
+  private getOnChangeEventSection(chunkSize: number, preSection?: SheetSection, section?: SheetSection) {
     return (
-      this.selectedSection !== this.section || (this.container.arrayValues.length >= chunkSize && selectedSection === "table")
+      (this.preSection && this.section !== this.preSection) || (this.container.arrayValues.length >= chunkSize && preSection === "table")
     );
+  }
+
+  private formatValue(formattedCellImport: CellImportOptions[], groupValues: any, typeParser: TypeParser) {
+    const row = { ...groupValues };
+    formattedCellImport.forEach((cell) => {
+      let value = groupValues[cell.keyName];
+      if (cell.setValue) value = cell.setValue(value, row);
+      if (cell.type && cell.type !== "virtual") value = (typeParser as any)[cell.type](value);
+      if (cell.validate && cell.validate(value)) throw new Error("Validated fail");
+
+      groupValues[cell.keyName] = value;
+    });
+
+    return groupValues;
+  }
+
+  private compareByAddress(cell: CellImportOptions, cellRaw: CellDataHelper, rowNumber: number, endTableAt: number) {
+    if (cell.section === "header") return cell.address === cellRaw.address;
+    else if (cell.section === "table") return cellRaw.address === `${cell.address}${rowNumber}`;
+    else {
+      return rowNumber === endTableAt + (cell?.fullAddress?.row ?? 0);
+    }
   }
 }
