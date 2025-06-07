@@ -1,7 +1,7 @@
 import * as fs from "fs";
+import { Readable } from "stream";
 import { pathImport } from "../helpers/path-file.js";
 import { getConfig } from "../helpers/datainout-config.js";
-import { Readable } from "stream";
 import { BaseReaderStream } from "./readers/BaserReaderStream.js";
 import { ImporterBaseReaderStreamType, ImporterBaseReaderType, ImporterHandlerFunction } from "../common/types/importer.type.js";
 import { ReaderContainer } from "./readers/ReaderFactory.js";

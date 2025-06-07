@@ -1,3 +1,5 @@
+import * as fs from "fs/promises";
+import { Writable } from "stream";
 import { ExporterOutputType } from "../common/types/exporter.type.js";
 import { getConfig } from "../helpers/datainout-config.js";
 import { pathReport } from "../helpers/path-file.js";
@@ -5,15 +7,9 @@ import { EjsHtmlExporter } from "./exporters/EjsHtml.exporter.js";
 import { EjsPdfExporter } from "./exporters/EjsPdf.exporter.js";
 import { ExceljsExporter } from "./exporters/Exceljs.exporter.js";
 import { Exporter, ExporterStream } from "./exporters/Exporter.js";
-import * as fs from "fs/promises";
 import { PartialDataTransfer } from "./PartialDataTransfer.js";
 import { ExceljsStreamExporter } from "./exporters/ExceljsStream.exporter.js";
-import { Writable } from "stream";
-import { Cron } from "../schedules/Cron.js";
-import { CronOptions } from "../common/types/cron.type.js";
-import { CronManager } from "../schedules/CronManager.js";
 export class Reporter {
-  protected cronManager: CronManager = new CronManager();
   protected templatePath: string;
 
   constructor(templatePath: string) {
@@ -45,15 +41,5 @@ export class Reporter {
     await stream.run(this.templatePath, { stream: streamWriter, footer: content.footer, header: content.header });
     await content.table.start(async (items) => await stream.add(items));
     return stream;
-  }
-
-  cron(cronTime: string, key: string, handler: (reporter: Reporter) => Promise<any>, opts?: CronOptions): Cron {
-    const cron = new Cron(cronTime, key, handler, opts);
-    this.cronManager.add(cron);
-    return cron;
-  }
-
-  public get CronManager() {
-    return this.cronManager;
   }
 }
