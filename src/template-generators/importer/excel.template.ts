@@ -2,12 +2,13 @@ import * as exceljs from "exceljs";
 import * as fs from "fs/promises";
 import { CellImportOptions, TableImportOptions } from "../../common/types/import-template.type.js";
 import { getConfig } from "../../helpers/datainout-config.js";
-import { CellDataHelper, ExcelReaderHelper, SheetDataHelper } from "../../helpers/excel-reader-helper.js";
 import { pathImport } from "../../helpers/path-file.js";
 import { TemplateGenerator } from "../TemplateGenerator.js";
+import { ReaderExceljsHelper } from "../../helpers/excel.helper.js";
+import { CellDataHelper, SheetDataHelper } from "../../common/types/excel-reader-helper.type.js";
 
 export class ExcelTemplateImport extends TemplateGenerator {
-  private excelReaderHelper: ExcelReaderHelper;
+  private excelReaderHelper: ReaderExceljsHelper;
   private excelContent: TableImportOptions = {
     sheets: [],
     name: "",
@@ -16,17 +17,18 @@ export class ExcelTemplateImport extends TemplateGenerator {
 
   constructor(templatePath: string) {
     super(templatePath, pathImport);
-
-    this.excelReaderHelper = new ExcelReaderHelper({
-      onCell: async (data: any) => await this.onCell(data),
-      onSheet: async (data: any) => await this.onSheet(data),
+    const that = this;
+    this.excelReaderHelper = new ReaderExceljsHelper({
+      onCell: that.onCell,
+      onSheet: that.onSheet,
+      isSampleExcel: true,
     });
   }
 
   private async onCell(cell: CellDataHelper) {
     if (!cell.isVariable || (cell.detail as any)._value.model.type === exceljs.ValueType.Merge) return;
     const fullAddress = cell.detail.fullAddress;
-    if (cell.section === "footer") fullAddress.row = fullAddress.row - (cell.endTableAtAt ?? 0);
+    if (cell.section === "footer") fullAddress.row = fullAddress.row - (cell.endTableAt ?? 0);
 
     this.currentSheet.push({
       keyName: cell.variableValue?.fieldName ?? "",
@@ -41,7 +43,7 @@ export class ExcelTemplateImport extends TemplateGenerator {
     if (this.currentSheet.length > 0) {
       this.excelContent.sheets.push({
         cells: this.currentSheet,
-        endTableAt: sheet.endTableAtAt,
+        endTableAt: sheet.endTableAt,
         sheetName: sheet.name,
         beginTableAt: sheet.beginTableAt,
         keyTableAt: sheet.columnIndex,

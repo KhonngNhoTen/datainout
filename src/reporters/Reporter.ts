@@ -9,6 +9,7 @@ import { ExceljsExporter } from "./exporters/Exceljs.exporter.js";
 import { Exporter, ExporterStream } from "./exporters/Exporter.js";
 import { PartialDataTransfer } from "./PartialDataTransfer.js";
 import { ExceljsStreamExporter } from "./exporters/ExceljsStream.exporter.js";
+import { TableData } from "../common/types/common-type.js";
 export class Reporter {
   protected templatePath: string;
 
@@ -17,7 +18,9 @@ export class Reporter {
     this.templatePath = `${this.templatePath}${getConfig().templateExtension ?? ".js"}`;
   }
 
-  async buffer(type: ExporterOutputType, data: any): Promise<Buffer> {
+  async buffer(type: ExporterOutputType, data: TableData): Promise<Buffer>;
+  async buffer(type: ExporterOutputType, data: any): Promise<Buffer>;
+  async buffer(type: ExporterOutputType, data: unknown): Promise<Buffer> {
     let exporter: Exporter | undefined;
     if (type === "html") exporter = new EjsHtmlExporter();
     if (type === "excel") exporter = new ExceljsExporter();
@@ -26,6 +29,8 @@ export class Reporter {
     return (await exporter.run(this.templatePath, data)) as Buffer;
   }
 
+  async write(reportPath: string, type: ExporterOutputType, data: TableData): Promise<any>;
+  async write(reportPath: string, type: ExporterOutputType, data: any): Promise<any>;
   async write(reportPath: string, type: ExporterOutputType, data: any) {
     const buffer = await this.buffer(type, data);
     reportPath = pathReport(reportPath, "reportDir");

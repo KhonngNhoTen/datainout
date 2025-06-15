@@ -15,3 +15,12 @@ export type BaseAttribute = {
 };
 
 export type SheetSection = "header" | "table" | "footer";
+
+export type SheetExcelOption = {
+  cells: any[];
+  sheetIndex: number;
+  sheetName: string;
+  beginTableAt: number;
+  endTableAt?: number;
+  keyTableAt: number;
+};

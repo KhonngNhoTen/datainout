@@ -12,13 +12,13 @@ export abstract class PartialDataTransfer {
     const { items, hasNext } = await this.partialData();
     while (hasNext) {
       if (this.callBack) await this.callBack(items);
-      await this.sleep(this.sleepTime);
+      await new Promise((resolve) => setTimeout(resolve, this.sleepTime));
     }
   }
 
-  private sleep(ms: number) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
+  // private sleep(ms: number) {
+  //   return new Promise((resolve) => setTimeout(resolve, ms));
+  // }
 
   abstract partialData(): Promise<{ items: any[] | null; hasNext: boolean }>;
 }

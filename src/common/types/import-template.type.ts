@@ -1,6 +1,4 @@
-import { ImporterHandler } from "../../importers/ImportHandler.js";
-import { BaseAttribute, SheetSection } from "./common-type.js";
-import { ImporterBaseReaderType } from "./importer.type.js";
+import { BaseAttribute, SheetExcelOption, SheetSection } from "./common-type.js";
 
 export type BaseAttributeImporter = {
   setValue?: (attributeValue?: any, row?: Record<string, any>) => any;
@@ -19,14 +17,7 @@ export type CellImportOptions = {
   };
 } & BaseAttributeImporter;
 
-export type SheetImportOptions = {
-  cells: CellImportOptions[];
-  sheetIndex: number;
-  sheetName: string;
-  beginTableAt: number;
-  endTableAt?: number;
-  keyTableAt: number;
-};
+export type SheetImportOptions = SheetExcelOption & { cells: CellImportOptions[] };
 
 export type TableImportOptions = {
   sheets: SheetImportOptions[];

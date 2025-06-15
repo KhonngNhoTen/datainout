@@ -1,11 +1,10 @@
 import { CellImportOptions, SheetImportOptions, TableImportOptions } from "../../common/types/import-template.type.js";
 import { FilterImportHandler, ImporterHandlerFunction, ImporterReaderType } from "../../common/types/importer.type.js";
 import { BaseReaderOptions } from "../../common/types/reader.type.js";
+import { ConvertorRows2TableData } from "../../helpers/convert-row-to-table-data.js";
 import { getFileExtension } from "../../helpers/get-file-extension.js";
 import { TypeParser } from "../../helpers/parse-type.js";
 import { sortByAddress } from "../../helpers/sort-by-address.js";
-import { TableDataImportHelper } from "../../helpers/table-data-import-helper.js";
-import { ImporterHandler } from "../ImportHandler.js";
 
 export abstract class BaseReader {
   private type: ImporterReaderType;
@@ -13,7 +12,7 @@ export abstract class BaseReader {
   protected typeParser: TypeParser;
   protected handlers: ImporterHandlerFunction[] = [];
   protected chunkSize: number = 20;
-  protected tableDataImportHelper: TableDataImportHelper = new TableDataImportHelper();
+  protected convertorRows2TableData: ConvertorRows2TableData = new ConvertorRows2TableData();
   protected templates: SheetImportOptions[] = [];
   protected groupCellDescs: { header: CellImportOptions[]; table: CellImportOptions[]; footer: CellImportOptions[] } = {
     header: [],

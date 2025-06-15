@@ -29,5 +29,9 @@ export abstract class BaseReaderStream extends BaseReader {
     this.listEvents.rError = func;
   }
 
+  protected emitEvent(key: keyof EventType, data?: any) {
+    if (this.listEvents[key]) this.listEvents[key](data);
+  }
+
   protected abstract override load(arg: unknown): Promise<any>;
 }

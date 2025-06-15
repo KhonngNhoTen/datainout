@@ -1,5 +1,5 @@
 import { PaperSize, Style as CellStyle, Cell, Worksheet, Location } from "exceljs";
-import { SheetSection } from "./common-type.js";
+import { SheetExcelOption, SheetSection } from "./common-type.js";
 
 /** Excel report template */
 export type CellReportOptions = {
@@ -12,13 +12,12 @@ export type CellReportOptions = {
   };
   style: Partial<CellStyle>;
   isVariable: boolean;
+  formula?: Cell["formula"];
 };
 
-export type SheetReportOptions = {
+export type SheetReportOptions = SheetExcelOption & {
   pageSize?: PaperSize;
   merges?: Record<string, { model: Location }>;
-  beginTableAt: number;
-  endTableAt?: number;
   cells: CellReportOptions[];
   columnWidths?: (number | undefined)[];
   rowHeights: Record<string, number>;
