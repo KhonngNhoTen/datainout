@@ -1,6 +1,6 @@
 import * as fs from "fs/promises";
 import { Writable } from "stream";
-import { ExporterOutputType } from "../common/types/exporter.type.js";
+import { ExporterOutputType, ExporterStreamOutputType } from "../common/types/exporter.type.js";
 import { getConfig } from "../helpers/datainout-config.js";
 import { pathReport } from "../helpers/path-file.js";
 import { EjsHtmlExporter } from "./exporters/EjsHtml.exporter.js";
@@ -38,13 +38,13 @@ export class Reporter {
   }
 
   async stream(
-    type: ExporterOutputType,
     content: { header?: any; footer?: any; table: PartialDataTransfer },
+    type: ExporterStreamOutputType = "excel",
     streamWriter: Writable
   ): Promise<ExporterStream> {
     const stream = new ExceljsStreamExporter();
     await stream.run(this.templatePath, { stream: streamWriter, footer: content.footer, header: content.header });
-    await content.table.start(async (items) => await stream.add(items));
+    await content.table.start(async (items, isNewSheet) => await stream.add(items));
     return stream;
   }
 }

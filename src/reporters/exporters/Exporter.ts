@@ -49,5 +49,5 @@ export abstract class ExporterStream extends Exporter {
     this.listEvents.rError = func;
   }
 
-  abstract add(chunks: any[]): Promise<any>;
+  abstract add(chunks: any[], isNewSheet: boolean): Promise<any>;
 }

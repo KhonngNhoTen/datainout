@@ -8,6 +8,7 @@ export class ExceljsStreamExporter extends ExporterStream {
   private header: any;
   private footer: any;
   private sheetIndex = 0;
+  private sheetDescIndex = 0;
 
   private workSheet?: exceljs.Worksheet;
   private workBookWriter?: exceljs.stream.xlsx.WorkbookWriter;
@@ -22,44 +23,40 @@ export class ExceljsStreamExporter extends ExporterStream {
     this.header = contents.header;
     this.footer = contents.footer;
     this.exporterHelper = new ExceljsExporterHelper(templatePath);
-
     this.workBookWriter = new exceljs.stream.xlsx.WorkbookWriter({ stream: contents.stream });
-    this.workSheet = this.workBookWriter.addWorksheet();
 
-    if (this.listEvents.rBegin) this.listEvents.rBegin(this.workSheet.name);
-    const headerTemplate = this.exporterHelper.filterGroupCellDesc("header", this.sheetIndex);
-
-    if (this.header && headerTemplate)
-      this.exporterHelper.setHeader(
-        this.header,
-        headerTemplate,
-        this.exporterHelper.getSheetInformation(this.sheetIndex).beginTableAt,
-        this.workSheet
-      );
+    this.createSheet();
   }
 
-  async add(chunks: any[] | null) {
+  async add(chunks: any[] | null, isNewSheet: boolean = false) {
     if (!this.workSheet) return;
 
     if (!chunks) {
-      this.doneSheet();
+      this.doneCurrentlySheet();
+      this.doneAllSheet();
       return;
+    }
+
+    if (isNewSheet) {
+      this.doneCurrentlySheet();
+      this.createSheet();
     }
 
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
-      const tableTemplate = this.exporterHelper?.filterGroupCellDesc("table", this.sheetIndex);
+      const tableTemplate = this.exporterHelper?.filterGroupCellDesc("table", this.sheetDescIndex);
       if (chunk && tableTemplate) this.exporterHelper?.addRow(chunk, tableTemplate, this.workSheet);
-      if (this.listEvents.rData) this.listEvents.rData({ section: "table", sheetIndex: 0, sheetName: this.workSheet.name });
+      if (this.listEvents.rData)
+        this.listEvents.rData({ section: "table", sheetIndex: this.sheetDescIndex, sheetName: this.workSheet.name });
     }
   }
 
-  private doneSheet() {
+  private doneCurrentlySheet() {
     this.workSheet?.commit();
     if (this.listEvents.rEnd) this.listEvents.rEnd(this.workSheet?.name);
     if (this.workSheet) {
-      const footerTemplate = this.exporterHelper?.filterGroupCellDesc("footer", this.sheetIndex);
-      const sheetInformation = this.exporterHelper?.getSheetInformation(this.sheetIndex);
+      const footerTemplate = this.exporterHelper?.filterGroupCellDesc("footer", this.sheetDescIndex);
+      const sheetInformation = this.exporterHelper?.getSheetInformation(this.sheetDescIndex);
 
       // Set footer
       if (this.footer && footerTemplate && this.exporterHelper) this.exporterHelper.setFooter(this.footer, footerTemplate, this.workSheet);
@@ -71,7 +68,23 @@ export class ExceljsStreamExporter extends ExporterStream {
       if (this.exporterHelper && sheetInformation?.columnWidths)
         this.exporterHelper.setWidthsAndHeights(this.workSheet, this.template.sheets[0]);
     }
-    this.doneAllSheet();
+  }
+
+  private createSheet() {
+    const sheetName = this.exporterHelper?.getSheetInformation(this.sheetIndex).sheetName;
+    this.workSheet = this.workBookWriter?.addWorksheet(this.sheetIndex === 0 ? sheetName : `${sheetName}-${this.sheetIndex + 1}`);
+
+    if (this.listEvents.rBegin) this.listEvents.rBegin(this.workSheet?.name);
+    const headerTemplate = this.exporterHelper?.filterGroupCellDesc("header", this.sheetDescIndex);
+
+    if (this.header && headerTemplate)
+      this.exporterHelper?.setHeader(
+        this.header,
+        headerTemplate,
+        this.exporterHelper.getSheetInformation(this.sheetIndex).beginTableAt,
+        this.workSheet as any
+      );
+    this.sheetIndex++;
   }
 
   private doneAllSheet() {
