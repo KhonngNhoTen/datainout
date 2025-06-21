@@ -47,6 +47,7 @@ export class ExceljsExporterHelper {
         if (!cellsDes[section]) cellsDes[section] = [cell];
         else cellsDes[section]?.push(cell);
       });
+      groupCells.push(cellsDes);
     });
 
     return { sheetInformation, groupCells };
@@ -54,7 +55,11 @@ export class ExceljsExporterHelper {
 
   setCell(rowData: any, cellOpt: CellReportOptions, cell: exceljs.Cell): exceljs.Cell {
     cell.style = cellOpt.style;
-    cell.value = cellOpt.isVariable ? rowData[(cellOpt.value as any).fieldName] : (cellOpt.value as any).hardValue;
+    if (cellOpt.formula) {
+      cell.value = {
+        formula: cellOpt.formula,
+      };
+    } else cell.value = cellOpt.isVariable ? rowData[(cellOpt.value as any).fieldName] : (cellOpt.value as any).hardValue;
     return cell;
   }
 
@@ -130,13 +135,13 @@ export class ExceljsExporterHelper {
   setWidthsAndHeights(sheet: exceljs.Worksheet, sheetFormat: Omit<SheetReportOptions, "cells">) {
     // Set column's width
     sheetFormat.columnWidths?.forEach((colW, i) => {
-      if (sheet.columns[i]) sheet.columns[i].width = colW;
+      if (sheet?.columns && sheet?.columns[i] && colW) sheet.columns[i].width = colW;
     });
 
-    // Set header and footer height
+    // Set header height
     const rowHeights = sheetFormat.rowHeights;
-    Object.keys(rowHeights).forEach((rowIndex) => {
-      if (rowHeights[rowIndex]) sheet.getRow(rowHeights[rowIndex]).height = rowHeights[rowIndex];
+    Object.keys(rowHeights).forEach((rowIndex, i) => {
+      if (rowHeights[rowIndex]) sheet.getRow(rowHeights[i]).height = rowHeights[rowIndex];
     });
   }
 }

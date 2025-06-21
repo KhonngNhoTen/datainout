@@ -13,16 +13,14 @@ export class ExcelTemplateReport extends TemplateGenerator {
     sheets: [],
     name: "",
   };
-  private currentSheet: SheetReportOptions = {} as any;
+  private currentSheet: SheetReportOptions = { cells: [], rowHeights: [] } as any;
 
   constructor(template: string) {
     super(template, pathReport);
-    const that = this;
-
     this.excelReaderHelper = new ReaderExceljsHelper({
-      onCell: that.onCell,
-      onSheet: that.onSheet,
-      onRow: that.onRow,
+      onSheet: async (data) => await this.onSheet(data),
+      onCell: async (data) => await this.onCell(data),
+      onRow: async (data) => await this.onRow(data),
       isSampleExcel: true,
     });
   }
@@ -46,7 +44,7 @@ export class ExcelTemplateReport extends TemplateGenerator {
 
   private async onRow(row: RowDataHelper) {
     if (row.beginTableAt && row.rowIndex < row.beginTableAt) this.currentSheet.rowHeights[row.rowIndex] = row.detail.height;
-    if (row.endTableAt && row.rowIndex > row.endTableAt) this.currentSheet.rowHeights[row.rowIndex] = row.detail.height;
+    // if (row.endTableAt && row.rowIndex > row.endTableAt) this.currentSheet.rowHeights[row.rowIndex] = row.detail.height;
   }
 
   private async onSheet(sheet: SheetDataHelper) {

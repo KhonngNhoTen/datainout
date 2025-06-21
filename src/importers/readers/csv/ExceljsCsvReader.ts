@@ -2,7 +2,6 @@ import * as exceljs from "exceljs";
 import { Readable } from "stream";
 import { FilterImportHandler } from "../../../common/types/importer.type.js";
 import { BaseReader } from "../BaseReader.js";
-import { ReaderExceljsHelper } from "../../../helpers/excel.helper.js";
 
 export class ExcelJsCsvReader extends BaseReader {
   constructor() {

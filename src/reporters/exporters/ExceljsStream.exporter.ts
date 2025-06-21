@@ -3,6 +3,7 @@ import { Writable } from "stream";
 
 import { ExporterStream } from "./Exporter.js";
 import { ExceljsExporterHelper } from "../../helpers/exceljs-exporter-helper.js";
+import { PartialDataTransfer } from "../PartialDataTransfer.js";
 
 export class ExceljsStreamExporter extends ExporterStream {
   private header: any;
@@ -14,26 +15,27 @@ export class ExceljsStreamExporter extends ExporterStream {
   private workBookWriter?: exceljs.stream.xlsx.WorkbookWriter;
 
   private exporterHelper?: ExceljsExporterHelper;
+  private content?: PartialDataTransfer;
 
-  constructor() {
-    super({ name: ExceljsStreamExporter.name, outputType: "excel" });
+  constructor(templatePath: string, streamWriter: Writable, contents: { header?: any; footer?: any; table: PartialDataTransfer }) {
+    super(ExceljsStreamExporter.name, templatePath, streamWriter, contents);
   }
 
-  async run(templatePath: string, contents: { header: any; footer: any; stream: Writable }): Promise<any> {
+  async run(templatePath: string, contents: { header: any; footer: any; stream: Writable; table: PartialDataTransfer }): Promise<any> {
     this.header = contents.header;
     this.footer = contents.footer;
+    this.content = contents.table;
     this.exporterHelper = new ExceljsExporterHelper(templatePath);
-    this.workBookWriter = new exceljs.stream.xlsx.WorkbookWriter({ stream: contents.stream });
+    this.workBookWriter = new exceljs.stream.xlsx.WorkbookWriter({ stream: contents.stream, useStyles: true });
 
     this.createSheet();
   }
 
-  async add(chunks: any[] | null, isNewSheet: boolean = false) {
+  async add(chunks: any[] | null, hasNext: boolean, isNewSheet: boolean = false) {
     if (!this.workSheet) return;
-
-    if (!chunks) {
+    if (!chunks || hasNext === false) {
       this.doneCurrentlySheet();
-      this.doneAllSheet();
+      await this.doneAllSheet();
       return;
     }
 
@@ -42,42 +44,44 @@ export class ExceljsStreamExporter extends ExporterStream {
       this.createSheet();
     }
 
+    let createdRow = 0;
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
       const tableTemplate = this.exporterHelper?.filterGroupCellDesc("table", this.sheetDescIndex);
-      if (chunk && tableTemplate) this.exporterHelper?.addRow(chunk, tableTemplate, this.workSheet);
-      if (this.listEvents.rData)
-        this.listEvents.rData({ section: "table", sheetIndex: this.sheetDescIndex, sheetName: this.workSheet.name });
+      if (chunk && tableTemplate) {
+        this.exporterHelper?.addRow(chunk, tableTemplate, this.workSheet);
+        createdRow++;
+      }
     }
+    this.listEvents.emitEvent("data", { chunkLenght: chunks.length, createdRow });
   }
 
   private doneCurrentlySheet() {
-    this.workSheet?.commit();
-    if (this.listEvents.rEnd) this.listEvents.rEnd(this.workSheet?.name);
+    this.listEvents.emitEvent("end", this.workSheet?.name);
     if (this.workSheet) {
       const footerTemplate = this.exporterHelper?.filterGroupCellDesc("footer", this.sheetDescIndex);
       const sheetInformation = this.exporterHelper?.getSheetInformation(this.sheetDescIndex);
 
       // Set footer
-      if (this.footer && footerTemplate && this.exporterHelper) this.exporterHelper.setFooter(this.footer, footerTemplate, this.workSheet);
+      if (footerTemplate && this.exporterHelper) this.exporterHelper.setFooter(this.footer ?? {}, footerTemplate, this.workSheet);
 
       // Merges cells
       if (this.exporterHelper && sheetInformation?.merges) this.exporterHelper.mergeCells(this.workSheet, sheetInformation);
 
       // Set heigth and width
-      if (this.exporterHelper && sheetInformation?.columnWidths)
-        this.exporterHelper.setWidthsAndHeights(this.workSheet, this.template.sheets[0]);
+      if (this.exporterHelper && sheetInformation?.columnWidths) this.exporterHelper.setWidthsAndHeights(this.workSheet, sheetInformation);
     }
+    this.workSheet?.commit();
   }
 
   private createSheet() {
     const sheetName = this.exporterHelper?.getSheetInformation(this.sheetIndex).sheetName;
     this.workSheet = this.workBookWriter?.addWorksheet(this.sheetIndex === 0 ? sheetName : `${sheetName}-${this.sheetIndex + 1}`);
 
-    if (this.listEvents.rBegin) this.listEvents.rBegin(this.workSheet?.name);
+    this.listEvents.emitEvent("begin", this.workSheet?.name);
     const headerTemplate = this.exporterHelper?.filterGroupCellDesc("header", this.sheetDescIndex);
 
-    if (this.header && headerTemplate)
+    if (headerTemplate)
       this.exporterHelper?.setHeader(
         this.header,
         headerTemplate,
@@ -87,8 +91,8 @@ export class ExceljsStreamExporter extends ExporterStream {
     this.sheetIndex++;
   }
 
-  private doneAllSheet() {
-    this.workBookWriter?.commit();
-    if (this.listEvents.rFinish) this.listEvents.rFinish();
+  private async doneAllSheet() {
+    await this.workBookWriter?.commit();
+    this.listEvents.emitEvent("finish");
   }
 }

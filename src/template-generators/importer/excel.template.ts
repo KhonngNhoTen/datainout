@@ -1,11 +1,12 @@
 import * as exceljs from "exceljs";
 import * as fs from "fs/promises";
-import { CellImportOptions, TableImportOptions } from "../../common/types/import-template.type.js";
+import { CellImportOptions, SheetImportOptions, TableImportOptions } from "../../common/types/import-template.type.js";
 import { getConfig } from "../../helpers/datainout-config.js";
 import { pathImport } from "../../helpers/path-file.js";
 import { TemplateGenerator } from "../TemplateGenerator.js";
 import { ReaderExceljsHelper } from "../../helpers/excel.helper.js";
 import { CellDataHelper, SheetDataHelper } from "../../common/types/excel-reader-helper.type.js";
+import { SheetSection } from "../../common/types/common-type.js";
 
 export class ExcelTemplateImport extends TemplateGenerator {
   private excelReaderHelper: ReaderExceljsHelper;
@@ -17,10 +18,9 @@ export class ExcelTemplateImport extends TemplateGenerator {
 
   constructor(templatePath: string) {
     super(templatePath, pathImport);
-    const that = this;
     this.excelReaderHelper = new ReaderExceljsHelper({
-      onCell: that.onCell,
-      onSheet: that.onSheet,
+      onSheet: async (data) => await this.onSheet(data),
+      onCell: async (data) => await this.onCell(data),
       isSampleExcel: true,
     });
   }

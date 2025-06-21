@@ -4,6 +4,7 @@ import { FilterImportHandler } from "../../../common/types/importer.type.js";
 import { BaseReader } from "../BaseReader.js";
 import { ReaderExceljsHelper } from "../../../helpers/excel.helper.js";
 import { RowDataHelper, SheetDataHelper } from "../../../common/types/excel-reader-helper.type.js";
+import { ConvertorRows2TableData } from "../../../helpers/convert-row-to-table-data.js";
 
 export class ExcelJsReader extends BaseReader {
   private excelReaderHelper: ReaderExceljsHelper = new ReaderExceljsHelper();
@@ -13,10 +14,10 @@ export class ExcelJsReader extends BaseReader {
   }
 
   async load(arg: unknown): Promise<any> {
-    const _that = this;
+    this.convertorRows2TableData = new ConvertorRows2TableData();
     this.excelReaderHelper = new ReaderExceljsHelper({
-      onSheet: _that.onSheet,
-      onRow: _that.onRow,
+      onSheet: async (data) => await this.onSheet(data),
+      onRow: async (data) => await this.onRow(data),
       isSampleExcel: false,
       template: this.templates,
     });
@@ -44,7 +45,7 @@ export class ExcelJsReader extends BaseReader {
         sheetName: workSheet.name,
       };
       const data = this.convertorRows2TableData.pop(triggerSection);
-      (async () => await this.callHandlers(data, filter))();
+      (async () => await this.callHandlers({ [triggerSection]: data }, filter))();
     }
   }
 }

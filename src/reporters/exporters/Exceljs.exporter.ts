@@ -19,7 +19,7 @@ export class ExceljsExporter extends Exporter {
     const footerTemplate = exporterHelper.filterGroupCellDesc("footer", sheetIndex);
     const sheetInformation = exporterHelper.getSheetInformation(sheetIndex);
     // Add header
-    if (data.header && headerTemplate) exporterHelper.setHeader(data.header, headerTemplate, sheetInformation.beginTableAt, workSheet);
+    if (headerTemplate) exporterHelper.setHeader(data.header, headerTemplate, sheetInformation.beginTableAt, workSheet);
 
     // Add table-content
     if (data.table && tableTemplate)
@@ -28,12 +28,13 @@ export class ExceljsExporter extends Exporter {
       });
 
     // Add footer
-    if (data.footer && footerTemplate) exporterHelper.setFooter(data.footer, footerTemplate, workSheet);
+    if (footerTemplate) exporterHelper.setFooter(data.footer, footerTemplate, workSheet);
 
     // Merges cells
     if (sheetInformation.merges) exporterHelper.mergeCells(workSheet, sheetInformation);
 
     // Set column width and row height
     if (sheetInformation.columnWidths) exporterHelper.setWidthsAndHeights(workSheet, sheetInformation);
+    return await workBook.xlsx.writeBuffer();
   }
 }

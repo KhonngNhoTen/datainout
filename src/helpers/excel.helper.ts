@@ -56,12 +56,12 @@ export class ReaderExceljsHelper {
 
       const section = ReaderExceljsHelper.getSection(row, beginTable, endTable);
       const cells: CellDataHelper[] = [];
-      if (this.onCell)
-        for (let j = 0; j < row.cellCount; j++) {
-          const cell = this.convertCell(row.getCell(j + 1), section, beginTable, endTable);
-          cells.push(cell);
-          this.onCell(cell);
-        }
+      for (let j = 0; j < row.cellCount; j++) {
+        if (!row.getCell(j + 1)?.value) continue;
+        const cell = this.convertCell(row.getCell(j + 1), section, beginTable, endTable);
+        cells.push(cell);
+        if (this.onCell) await this.onCell(cell);
+      }
 
       if (this.onRow) await this.onRow(this.convertRow(row, section, cells));
     }
@@ -100,27 +100,32 @@ export class ReaderExceljsHelper {
       rowIndex: row.number,
       section: section,
       cells,
-      beginTableAt: cells[0].beginTableAt ?? DEFAULT_BEGIN_TABLE,
-      endTableAt: cells[0].endTableAt ?? DEFAULT_END_TABLE,
+      beginTableAt: cells[0]?.beginTableAt ?? DEFAULT_BEGIN_TABLE,
+      endTableAt: cells[0]?.endTableAt ?? DEFAULT_END_TABLE,
     };
   }
 
   static getSection(row: exceljs.Row, beginTable: number, endTable: number): SheetSection {
-    if (beginTable === DEFAULT_BEGIN_TABLE) return "header";
-    if (row.number > endTable && endTable !== DEFAULT_END_TABLE) return "footer";
-    if (row.number > beginTable && row.number) return "table";
-    return "header";
+    let section: SheetSection = "header";
+    if (beginTable === DEFAULT_BEGIN_TABLE) section = "header";
+    else if (beginTable !== DEFAULT_BEGIN_TABLE && row.number < beginTable) section = "header";
+    else if (row.number > endTable && endTable !== DEFAULT_END_TABLE) section = "footer";
+    else if (row.number > beginTable) section = "table";
+
+    return section;
   }
 
   /** Get begin table at by row */
   static beginTableAt(row: exceljs.Row, sheetOpts: SheetExcelOption, isSampleExcel: boolean = true) {
     if (isSampleExcel)
       for (let i = 0; i < row.cellCount; i++) {
-        const cellValue = row.getCell(i + 1) as unknown as string;
-        if (typeof cellValue === "string" && cellValue.includes(SYNTAX.INDEX_COLUMN_TABLE_SYNTAX)) return row.number;
+        const cellValue = row.getCell(i + 1).value as unknown as string;
+        if (cellValue === undefined || typeof cellValue !== "string") continue;
+        if (cellValue.includes(SYNTAX.INDEX_COLUMN_TABLE_SYNTAX)) return row.number;
         if (cellValue.includes(SYNTAX.VARIABLE_TABLE_SYNTAX)) return row.number - 1;
       }
     else return sheetOpts.beginTableAt;
+
     return undefined;
   }
 
@@ -128,22 +133,28 @@ export class ReaderExceljsHelper {
   static endTableAt(row: exceljs.Row, sheetOpts: SheetExcelOption, isSampleExcel: boolean = true) {
     if (isSampleExcel)
       for (let i = 0; i < row.cellCount; i++) {
-        const cellValue = row.getCell(i + 1) as unknown as string;
-        if (typeof cellValue !== "string") continue;
+        const cellValue = row.getCell(i + 1).value as unknown as string;
+        if (cellValue === undefined || typeof cellValue !== "string") continue;
         if (cellValue.includes(SYNTAX.END_TABLE_SYNYAX)) return row.number - 1;
-        if (!cellValue.includes(SYNTAX.INDEX_COLUMN_TABLE_SYNTAX) && cellValue.includes(SYNTAX.VARIABLE_TABLE_SYNTAX))
-          return row.number - 1;
+        if (!cellValue.includes(SYNTAX.INDEX_COLUMN_TABLE_SYNTAX) && cellValue.includes(SYNTAX.VARIABLE_TABLE_SYNTAX)) return row.number;
       }
-    else if (!(row.values as any[])[sheetOpts.keyTableAt]) return row.number - 1;
+    else {
+      const cellvalues = (row?.values as any[]) ?? [];
+      if (cellvalues && !cellvalues[sheetOpts.keyTableAt] && row.number > sheetOpts.beginTableAt) return row.number - 1;
+    }
     return undefined;
+  }
+
+  static isNullableRow(row: exceljs.Row) {
+    return (row?.values as any[])?.reduce((acc, val) => acc && !!!val, true) ?? false;
   }
 
   /** Get key of table by row */
   static columnTableIndex(row: exceljs.Row, sheetOpts: SheetExcelOption, isSampleExcel: boolean = true) {
     if (isSampleExcel)
       for (let i = 0; i < row.cellCount; i++) {
-        const cellValue = row.getCell(i + 1) as unknown as string;
-        if (typeof cellValue !== "string") continue;
+        const cellValue = row.getCell(i + 1).value as unknown as string;
+        if (cellValue === undefined || typeof cellValue !== "string") continue;
         if ((cellValue + "").includes(SYNTAX.INDEX_COLUMN_TABLE_SYNTAX)) return row.number + 1;
       }
     else return sheetOpts.keyTableAt;
@@ -179,5 +190,11 @@ export class ReaderExceljsHelper {
     }
 
     return { fieldName, type };
+  }
+
+  static splitAddress(address: string) {
+    const col = address.split(/\d+/)[0];
+    const row = address.split(/[a-zA-Z]/)[1];
+    return { col, row };
   }
 }

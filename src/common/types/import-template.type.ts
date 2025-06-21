@@ -1,8 +1,9 @@
 import { BaseAttribute, SheetExcelOption, SheetSection } from "./common-type.js";
 
 export type BaseAttributeImporter = {
+  required?: boolean;
   setValue?: (attributeValue?: any, row?: Record<string, any>) => any;
-  validate?: (val: any) => boolean;
+  validate?: (val: any) => { isValid: boolean; message?: string };
   section: SheetSection;
 } & BaseAttribute;
 
