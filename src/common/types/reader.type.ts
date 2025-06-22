@@ -1,6 +1,7 @@
 import { TypeParser } from "../../helpers/parse-type.js";
 import { BaseReader } from "../../importers/readers/BaseReader.js";
-import { FilterImportHandler, ImporterReaderType } from "./importer.type.js";
+import { SheetImportOptions } from "./import-template.type.js";
+import { ImporterReaderType } from "./importer.type.js";
 
 export type BaseReaderOptions = {
   type: ImporterReaderType;

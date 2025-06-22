@@ -1,5 +1,6 @@
 import { EventRegister, IBaseStream, IEventRegister } from "../../common/core/ListEvents.js";
 import { EventType } from "../../common/types/common-type.js";
+import { SheetImportOptions } from "../../common/types/import-template.type.js";
 import { ImporterBaseReaderStreamType, ImporterHandlerFunction } from "../../common/types/importer.type.js";
 import { TypeParser } from "../../helpers/parse-type.js";
 import { BaseReader } from "./BaseReader.js";
@@ -7,19 +8,19 @@ import { Readable } from "stream";
 
 export abstract class BaseReaderStream extends BaseReader implements IBaseStream {
   protected listEvents: EventRegister = new EventRegister();
-  protected templatePath: string;
+  protected templates: SheetImportOptions[];
   protected readable: Readable;
   protected handlers: ImporterHandlerFunction[];
 
-  constructor(templatePath: string, readable: Readable, handlers: ImporterHandlerFunction[]) {
+  constructor(templates: SheetImportOptions[], readable: Readable, handlers: ImporterHandlerFunction[]) {
     super({ type: "excel-stream", typeParser: new TypeParser() });
-    this.templatePath = templatePath;
+    this.templates = templates;
     this.handlers = handlers;
     this.readable = readable;
   }
 
   start(): void {
-    (async () => await this.run(this.templatePath, this.readable, this.handlers))();
+    (async () => await this.run(this.templates, this.readable, this.handlers))();
   }
 
   on<EventKey extends keyof EventType>(key: EventKey, func: EventType[EventKey]): this {

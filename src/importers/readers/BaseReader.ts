@@ -20,6 +20,7 @@ export abstract class BaseReader {
     footer: [],
   };
   protected sheetIndex: number = 0;
+  protected additionalTemplate: CellImportOptions[][] = [];
 
   constructor(opts: BaseReaderOptions) {
     this.type = opts.type;
@@ -28,19 +29,20 @@ export abstract class BaseReader {
 
   protected abstract load(arg: unknown): Promise<any>;
 
-  public async run(templatePath: string, arg: unknown, handlers: ImporterHandlerFunction[], chunkSize?: number) {
+  public async run(templates: SheetImportOptions[], arg: unknown, handlers: ImporterHandlerFunction[], opts?: any) {
     this.sheetIndex = 0;
-    this.templates = this.getTemplates(templatePath).sheets;
-    this.groupCellDescs = this.formatSheet(0);
-    this.chunkSize = chunkSize ?? this.chunkSize;
+    this.templates = templates;
+    this.templates[this.sheetIndex];
+    this.groupCellDescs = this.formatSheet(this.sheetIndex);
+    this.chunkSize = opts?.chunkSize ?? this.chunkSize;
     this.handlers = handlers;
 
     await this.load(arg);
   }
 
-  protected getTemplates(templatePath: string): TableImportOptions {
-    return getFileExtension(templatePath) === "js" ? require(templatePath) : require(templatePath).default;
-  }
+  // protected getTemplates(templatePath: string): TableImportOptions {
+  //   return getFileExtension(templatePath) === "js" ? require(templatePath) : require(templatePath).default;
+  // }
 
   protected formatSheet(sheetIndex: number) {
     const excel: any = this.templates[sheetIndex].cells.reduce((acc, cell) => {

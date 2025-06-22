@@ -3,10 +3,11 @@ import { Readable } from "stream";
 import { FilterImportHandler, ImporterHandlerFunction } from "../../../common/types/importer.type.js";
 import { BaseReaderStream } from "../BaserReaderStream.js";
 import { ConvertorRows2TableData } from "../../../helpers/convert-row-to-table-data.js";
+import { SheetImportOptions } from "../../../common/types/import-template.type.js";
 
 export class ExcelJsStreamReader extends BaseReaderStream {
-  constructor(templatePath: string, readable: Readable, handlers: ImporterHandlerFunction[]) {
-    super(templatePath, readable, handlers);
+  constructor(templates: SheetImportOptions[], readable: Readable, handlers: ImporterHandlerFunction[]) {
+    super(templates, readable, handlers);
   }
 
   public async load(arg: Readable): Promise<any> {
@@ -56,7 +57,9 @@ export class ExcelJsStreamReader extends BaseReaderStream {
   }
 
   private handleRow(workSheet: exceljs.Worksheet, row: exceljs.Row | null) {
-    const { isTrigger, triggerSection } = this.convertorRows2TableData.push(row, this.templates[this.sheetIndex]);
+    const { isTrigger, triggerSection, errors, hasError } = this.convertorRows2TableData.push(row, this.templates[this.sheetIndex]);
+
+    if (hasError) this.listEvents.emitEvent("error", errors);
 
     if (isTrigger) {
       const filter: FilterImportHandler = {

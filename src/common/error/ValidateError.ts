@@ -1,13 +1,13 @@
-import { ValidateErrorOpts } from "../types/error.type.js";
+import { ValidateImportErrorOpts } from "../types/error.type.js";
 
-export class ValidateError extends Error {
-  col: string;
-  row: number;
-  value: any;
-  constructor(opts: ValidateErrorOpts) {
+export class ValidateImportError extends Error {
+  address?: string;
+  value?: any;
+  keyField: string;
+  constructor(opts: ValidateImportErrorOpts) {
     super(opts.message);
-    this.col = opts.col;
-    this.row = opts.row;
+    this.address = opts?.address;
+    this.keyField = opts.keyField;
     this.value = opts.value;
   }
 }

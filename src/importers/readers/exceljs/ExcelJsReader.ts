@@ -36,7 +36,7 @@ export class ExcelJsReader extends BaseReader {
   }
 
   private handleRow(workSheet: exceljs.Worksheet, row: exceljs.Row | null) {
-    const { isTrigger, triggerSection } = this.convertorRows2TableData.push(row, this.templates[this.sheetIndex]);
+    const { isTrigger, triggerSection, hasError, errors } = this.convertorRows2TableData.push(row, this.templates[this.sheetIndex]);
 
     if (isTrigger) {
       const filter: FilterImportHandler = {
