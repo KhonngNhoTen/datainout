@@ -11,6 +11,7 @@ import { PartialDataTransfer } from "./PartialDataTransfer.js";
 import { ExceljsStreamExporter } from "./exporters/ExceljsStream.exporter.js";
 import { TableData } from "../common/types/common-type.js";
 import { IBaseStream } from "../common/core/ListEvents.js";
+import { CellReportOptions } from "../common/types/report-template.type.js";
 export class Reporter {
   protected templatePath: string;
 
@@ -51,5 +52,9 @@ export class Reporter {
       table: content.table,
     });
     return stream;
+  }
+
+  addCellTemplate(cells: CellReportOptions[], sheetIndex: number = 0) {
+    this.addCellTemplate(cells, sheetIndex);
   }
 }

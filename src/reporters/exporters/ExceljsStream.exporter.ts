@@ -4,6 +4,7 @@ import { Writable } from "stream";
 import { ExporterStream } from "./Exporter.js";
 import { ExceljsExporterHelper } from "../../helpers/exceljs-exporter-helper.js";
 import { PartialDataTransfer } from "../PartialDataTransfer.js";
+import { CellReportOptions } from "../../common/types/report-template.type.js";
 
 export class ExceljsStreamExporter extends ExporterStream {
   private header: any;
@@ -15,16 +16,14 @@ export class ExceljsStreamExporter extends ExporterStream {
   private workBookWriter?: exceljs.stream.xlsx.WorkbookWriter;
 
   private exporterHelper?: ExceljsExporterHelper;
-  private content?: PartialDataTransfer;
 
   constructor(templatePath: string, streamWriter: Writable, contents: { header?: any; footer?: any; table: PartialDataTransfer }) {
     super(ExceljsStreamExporter.name, templatePath, streamWriter, contents);
   }
 
-  async run(templatePath: string, contents: { header: any; footer: any; stream: Writable; table: PartialDataTransfer }): Promise<any> {
+  async run(templatePath: string, contents: { header: any; footer: any; stream: Writable }): Promise<any> {
     this.header = contents.header;
     this.footer = contents.footer;
-    this.content = contents.table;
     this.exporterHelper = new ExceljsExporterHelper(templatePath);
     this.workBookWriter = new exceljs.stream.xlsx.WorkbookWriter({ stream: contents.stream, useStyles: true });
 
@@ -94,5 +93,9 @@ export class ExceljsStreamExporter extends ExporterStream {
   private async doneAllSheet() {
     await this.workBookWriter?.commit();
     this.listEvents.emitEvent("finish");
+  }
+
+  addCellTemplate(cells: CellReportOptions[], sheetIndex: number = 0) {
+    if (this.exporterHelper) this.addCellTemplate(cells, sheetIndex);
   }
 }

@@ -3,6 +3,7 @@ import { EventType } from "../../common/types/common-type.js";
 import { ExporterOptions, ExporterOutputType, ExporterMethodType } from "../../common/types/exporter.type.js";
 import { Writable } from "stream";
 import { PartialDataTransfer } from "../PartialDataTransfer.js";
+import { CellReportOptions } from "../../common/types/report-template.type.js";
 
 export abstract class Exporter {
   protected outputType: ExporterOutputType;
@@ -18,6 +19,10 @@ export abstract class Exporter {
   }
 
   abstract run(templatePath: string, data: any): Promise<Buffer | Writable>;
+
+  addCellTemplate(cells: CellReportOptions[], sheetIndex: number = 0) {
+    throw Error("This function only supports for excels");
+  }
 }
 
 export abstract class ExporterStream extends Exporter implements IBaseStream {

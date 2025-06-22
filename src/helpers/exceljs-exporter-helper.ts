@@ -144,4 +144,11 @@ export class ExceljsExporterHelper {
       if (rowHeights[rowIndex]) sheet.getRow(rowHeights[i]).height = rowHeights[rowIndex];
     });
   }
+
+  addCellTemplate(cells: CellReportOptions[], sheetIndex: number = 0) {
+    for (let i = 0; i < cells.length; i++) {
+      const section = cells[i].section;
+      this.groupCellDescs[sheetIndex][section ?? "header"].push(...cells);
+    }
+  }
 }
