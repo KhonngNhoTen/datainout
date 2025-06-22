@@ -6,12 +6,17 @@ import { pathReport } from "../helpers/path-file.js";
 import { EjsHtmlExporter } from "./exporters/EjsHtml.exporter.js";
 import { EjsPdfExporter } from "./exporters/EjsPdf.exporter.js";
 import { ExceljsExporter } from "./exporters/Exceljs.exporter.js";
-import { Exporter, ExporterStream } from "./exporters/Exporter.js";
+import { Exporter } from "./exporters/Exporter.js";
 import { PartialDataTransfer } from "./PartialDataTransfer.js";
 import { ExceljsStreamExporter } from "./exporters/ExceljsStream.exporter.js";
 import { TableData } from "../common/types/common-type.js";
 import { IBaseStream } from "../common/core/ListEvents.js";
 import { CellReportOptions } from "../common/types/report-template.type.js";
+
+type ExportOptions = {
+  onError?: (data: any) => void;
+  additionalCell?: CellReportOptions[];
+};
 export class Reporter {
   protected templatePath: string;
 
@@ -20,23 +25,24 @@ export class Reporter {
     this.templatePath = `${this.templatePath}${getConfig().templateExtension ?? ".js"}`;
   }
 
-  async buffer(data: TableData, type?: ExporterOutputType): Promise<Buffer>;
-  async buffer(data: any, type?: ExporterOutputType): Promise<Buffer>;
-  async buffer(data: unknown, type?: ExporterOutputType): Promise<Buffer> {
-    type = type ?? "excel";
+  async buffer(data: TableData, opts?: ExportOptions & { type?: ExporterOutputType }): Promise<Buffer>;
+  async buffer(data: any, opts?: ExportOptions & { type?: ExporterOutputType }): Promise<Buffer>;
+  async buffer(data: unknown, opts?: ExportOptions & { type?: ExporterOutputType }): Promise<Buffer> {
+    const type = opts?.type ?? "excel";
     let exporter: Exporter | undefined;
     if (type === "html") exporter = new EjsHtmlExporter();
     if (type === "excel") exporter = new ExceljsExporter();
     if (type === "pdf") exporter = new EjsPdfExporter();
     if (!exporter) throw new Error("Exporter not setup");
+
+    if (opts?.additionalCell) exporter.addCellTemplate(opts.additionalCell);
     return (await exporter.run(this.templatePath, data)) as Buffer;
   }
 
-  async write(reportPath: string, data: TableData, type?: ExporterOutputType): Promise<any>;
-  async write(reportPath: string, data: any, type?: ExporterOutputType): Promise<any>;
-  async write(reportPath: string, data: any, type?: ExporterOutputType) {
-    type = type ?? "excel";
-    const buffer = await this.buffer(data, type);
+  async write(reportPath: string, data: TableData, opts?: ExportOptions & { type?: ExporterOutputType }): Promise<any>;
+  async write(reportPath: string, data: any, opts?: ExportOptions & { type?: ExporterOutputType }): Promise<any>;
+  async write(reportPath: string, data: any, opts?: ExportOptions & { type?: ExporterOutputType }) {
+    const buffer = await this.buffer(data, opts);
     reportPath = pathReport(reportPath, "reportDir");
     await fs.writeFile(reportPath, Uint8Array.from(buffer));
   }
@@ -44,17 +50,17 @@ export class Reporter {
   createStream(
     content: { header?: any; footer?: any; table: PartialDataTransfer },
     streamWriter: Writable,
-    type: ExporterStreamOutputType = "excel"
+    opts?: ExportOptions & {
+      type: ExporterStreamOutputType;
+    }
   ): IBaseStream {
     const stream = new ExceljsStreamExporter(this.templatePath, streamWriter, {
       footer: content.footer,
       header: content.header,
       table: content.table,
     });
-    return stream;
-  }
+    if (opts?.additionalCell) stream.addCellTemplate(opts.additionalCell);
 
-  addCellTemplate(cells: CellReportOptions[], sheetIndex: number = 0) {
-    this.addCellTemplate(cells, sheetIndex);
+    return stream;
   }
 }
