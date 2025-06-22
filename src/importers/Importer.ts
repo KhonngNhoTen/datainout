@@ -2,9 +2,7 @@ import * as fs from "fs";
 import { Readable } from "stream";
 import { pathImport } from "../helpers/path-file.js";
 import { getConfig } from "../helpers/datainout-config.js";
-import { BaseReaderStream } from "./readers/BaserReaderStream.js";
-import { ImporterBaseReaderStreamType, ImporterBaseReaderType, ImporterHandlerFunction } from "../common/types/importer.type.js";
-import { BaseReader } from "./readers/BaseReader.js";
+import { ImporterBaseReaderStreamType, ImporterHandlerFunction, ImportFunctionOpions } from "../common/types/importer.type.js";
 import { ExcelJsReader } from "./readers/exceljs/ExcelJsReader.js";
 import { ExcelJsCsvReader } from "./readers/csv/ExceljsCsvReader.js";
 import { ExcelJsStreamReader } from "./readers/exceljs/ExcelJsStreamReader.js";
@@ -21,12 +19,12 @@ export class Importer {
     this.templates = this.getTemplates(this.templatePath).sheets;
   }
 
-  async load(filePath: string, handlers: ImporterHandlerFunction[], type?: ImporterBaseReaderType, chunkSize?: number): Promise<any>;
-  async load(buffer: Buffer, handlers: ImporterHandlerFunction[], type?: ImporterBaseReaderType, chunkSize?: number): Promise<any>;
-  async load(arg: unknown, handlers: ImporterHandlerFunction[], type: ImporterBaseReaderType = "excel", chunkSize?: number) {
-    if (!type) type = "excel";
+  async load(filePath: string, handlers: ImporterHandlerFunction[], opts?: ImportFunctionOpions): Promise<any>;
+  async load(buffer: Buffer, handlers: ImporterHandlerFunction[], opts?: ImportFunctionOpions): Promise<any>;
+  async load(arg: unknown, handlers: ImporterHandlerFunction[], opts?: ImportFunctionOpions) {
+    const type = opts?.type ?? "excel";
     const reader = this.createBaseReader(type);
-    await reader.run(this.templates, arg as any, handlers, chunkSize);
+    await reader.run(this.templates, arg as any, handlers, opts?.chunkSize);
   }
 
   createStream(arg: string, handlers: ImporterHandlerFunction[], type?: ImporterBaseReaderStreamType): IBaseStream;

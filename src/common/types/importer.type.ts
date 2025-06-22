@@ -11,3 +11,9 @@ export type ImporterBaseReaderStreamType = "excel-stream";
 export type ImporterReaderType = ImporterBaseReaderType | ImporterBaseReaderStreamType;
 
 export type ImporterHandlerFunction = (data: TableData, filter: FilterImportHandler) => Promise<any>;
+
+export type ImportFunctionOpions = {
+  type?: ImporterBaseReaderType;
+  chunkSize?: number;
+  onError?: (data: any) => void;
+};

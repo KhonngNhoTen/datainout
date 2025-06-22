@@ -1,5 +1,6 @@
 import { PaperSize, Style as CellStyle, Cell, Location } from "exceljs";
 import { SheetExcelOption, SheetSection } from "./common-type.js";
+import { ExporterOutputType, ExporterStreamOutputType } from "./exporter.type.js";
 /** Excel report template */
 export type CellReportOptions = {
   address: string;
@@ -25,4 +26,15 @@ export type SheetReportOptions = SheetExcelOption & {
 export type TableReportOptions = {
   sheets: SheetReportOptions[];
   name: string;
+};
+
+export type ReportOptions = {
+  onError?: (data: any) => void;
+  additionalCell?: CellReportOptions[];
+  type?: ExporterOutputType;
+};
+
+export type ReportStreamOptions = {
+  additionalCell?: CellReportOptions[];
+  type?: ExporterStreamOutputType;
 };
