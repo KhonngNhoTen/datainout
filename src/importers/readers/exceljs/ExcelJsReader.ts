@@ -5,6 +5,7 @@ import { BaseReader } from "../BaseReader.js";
 import { ReaderExceljsHelper } from "../../../helpers/excel.helper.js";
 import { RowDataHelper, SheetDataHelper } from "../../../common/types/excel-reader-helper.type.js";
 import { ConvertorRows2TableData } from "../../../helpers/convert-row-to-table-data.js";
+import { SheetSection } from "../../../common/types/common-type.js";
 
 export class ExcelJsReader extends BaseReader {
   private excelReaderHelper: ReaderExceljsHelper = new ReaderExceljsHelper();
@@ -32,11 +33,28 @@ export class ExcelJsReader extends BaseReader {
   }
 
   private async onSheet(sheet: SheetDataHelper) {
+    const lastestRow = sheet.lastestRow;
+    const sectionIndex: any = { header: 1, table: 2, footer: 3 };
+    const sections = new Set<SheetSection>();
+
+    this.templates[this.sheetIndex].cells.forEach((cell) => {
+      if (sectionIndex[cell.section] > sectionIndex[lastestRow.section]) sections.add(cell.section);
+    });
+
+    let rowIndex = lastestRow.rowIndex;
+    sections.forEach((section) => {
+      this.handleRow(sheet.detail, section, ++rowIndex);
+    });
+
     this.handleRow(sheet.detail, null);
   }
 
-  private handleRow(workSheet: exceljs.Worksheet, row: exceljs.Row | null) {
-    const { isTrigger, triggerSection, hasError, errors } = this.convertorRows2TableData.push(row, this.templates[this.sheetIndex]);
+  private handleRow(workSheet: exceljs.Worksheet, section: SheetSection, rowIndex: number): void;
+  private handleRow(workSheet: exceljs.Worksheet, row: exceljs.Row | null): void;
+  private handleRow(workSheet: exceljs.Worksheet, arg: unknown, rowIndex?: number) {
+    const { isTrigger, triggerSection, hasError, errors } = rowIndex
+      ? this.convertorRows2TableData.pushBySection(arg as SheetSection, this.templates[this.sheetIndex], rowIndex)
+      : this.convertorRows2TableData.push(arg as any, this.templates[this.sheetIndex]);
 
     if (isTrigger) {
       const filter: FilterImportHandler = {

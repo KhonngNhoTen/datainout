@@ -40,10 +40,6 @@ export abstract class BaseReader {
     await this.load(arg);
   }
 
-  // protected getTemplates(templatePath: string): TableImportOptions {
-  //   return getFileExtension(templatePath) === "js" ? require(templatePath) : require(templatePath).default;
-  // }
-
   protected formatSheet(sheetIndex: number) {
     const excel: any = this.templates[sheetIndex].cells.reduce((acc, cell) => {
       if (!acc[cell.section]) acc[cell.section] = [cell];

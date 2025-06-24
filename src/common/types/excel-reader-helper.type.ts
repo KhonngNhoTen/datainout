@@ -32,6 +32,8 @@ export type SheetDataHelper = {
   beginTableAt: number;
   endTableAt: number;
   rowCount: number;
+  lastestRow: RowDataHelper;
+  firstRow: RowDataHelper;
 };
 
 export type ExcelReaderHelperOptions = {

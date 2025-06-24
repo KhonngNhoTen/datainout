@@ -1,6 +1,6 @@
 export type TableData = {
-  header?: {};
-  footer?: {};
+  header?: any;
+  footer?: any;
   table?: any[];
 };
 

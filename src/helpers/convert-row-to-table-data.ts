@@ -26,21 +26,19 @@ export class ConvertorRows2TableData {
   push(row: exceljs.Row | null, template: SheetImportOptions): PushResultTableData;
   push(arg: any, template: SheetImportOptions) {
     const addresses: any = {};
-    // List validateErrors
-    const errors: ValidateImportError[] = [];
     // Map cell velue with cell description
-    let groupValues: GroupValueRow = {};
-    let hasError = false;
+    const groupValues: GroupValueRow = {};
 
     if (arg === null) return { isTrigger: true, triggerSection: this.section ?? "header" };
+
     if (ReaderExceljsHelper.isNullableRow(arg?.detail ?? arg))
-      return { isTrigger: false, triggerSection: this.section ?? "header", errors, hasError };
+      return { isTrigger: false, triggerSection: this.section ?? "header", errors: [], hasError: false };
 
     const { endTable, row, section } = this.getRowInformation(arg, template);
     const isTrigger = this.isTrigger(section);
     const triggerSection = this.triggerSection(section);
 
-    if (!row) return { isTrigger: false, triggerSection: this.section ?? "header", errors, hasError };
+    if (!row) return { isTrigger: false, triggerSection: this.section ?? "header", errors: [], hasError: false };
 
     for (let i = 0; i < row.cellCount; i++) {
       const cell = row.getCell(i + 1);
@@ -52,28 +50,30 @@ export class ConvertorRows2TableData {
       addresses[cellImport.keyName] = cell.address;
     }
 
-    if (isTrigger || section === "table") {
-      const resultFormat = this.formatValue(
-        template.cells.filter((e: CellImportOptions) => e.section === section),
-        groupValues,
-        this.typeParser,
-        addresses,
-        row.number
-      );
-      errors.push(...resultFormat.errors);
-      hasError = errors.length !== 0;
-      groupValues = resultFormat.groupValues;
-    }
-
-    if (!hasError && section === "table" && Object.keys(groupValues).length > 0) this.container.table?.push(groupValues);
-    else if (!hasError && Object.keys(groupValues).length > 0)
+    if (section === "table" && Object.keys(groupValues).length > 0) this.container.table?.push(groupValues);
+    else if (Object.keys(groupValues).length > 0)
       this.container[section] = {
         ...this.container[section],
         ...(groupValues as any),
       };
 
+    const { errors, hasError } = this.triggerGroupData(triggerSection, section, template, addresses, row);
+
     this.section = section;
     return { isTrigger, triggerSection, errors, hasError };
+  }
+
+  pushBySection(section: SheetSection, template: SheetImportOptions, rowIndex: number) {
+    const result = this.formatValue(
+      template.cells.filter((e: CellImportOptions) => e.section === section),
+      {},
+      this.typeParser,
+      rowIndex
+    );
+    if (section === "table") this.container.table?.push(result.groupValues);
+    else this.container[section] = result.groupValues;
+
+    return { isTrigger: true, triggerSection: section, errors: result.errors, hasError: result.errors.length !== 0 };
   }
 
   pop(section: SheetSection) {
@@ -127,13 +127,55 @@ export class ConvertorRows2TableData {
     return { row, section, beginTable, endTable };
   }
 
+  private triggerGroupData(
+    triggerSection: SheetSection,
+    section: SheetSection,
+    template: SheetImportOptions,
+    addresses: any,
+    row: exceljs.Row
+  ) {
+    const errors: ValidateImportError[] = [];
+    if (triggerSection !== section) {
+      const resultFormat = this.formatValue(
+        template.cells.filter((e: CellImportOptions) => e.section === triggerSection),
+        this.container[triggerSection],
+        this.typeParser,
+        row.number,
+        addresses
+      );
+      errors.push(...resultFormat.errors);
+      // Set groupvalue;
+      this.container[triggerSection] = resultFormat.groupValues;
+    }
+    if (section === "table") {
+      const groupValue = this.container.table?.pop();
+      const resultFormat = this.formatValue(
+        template.cells.filter((e: CellImportOptions) => e.section === section),
+        groupValue,
+        this.typeParser,
+        row.number,
+        addresses
+      );
+      errors.push(...resultFormat.errors);
+      // Set groupvalue;
+      this.container.table?.push(groupValue);
+    }
+    const hasError = errors.length !== 0;
+    return { hasError, errors };
+  }
+
   private formatValue(
     formattedCellImport: CellImportOptions[],
     groupValues: GroupValueRow,
     typeParser: TypeParser,
-    addresses: any,
-    rowIndex: number
+    rowIndex: number,
+    addresses?: any
   ) {
+    formattedCellImport = formattedCellImport.sort((a, b) => {
+      const aType = a.type === "virtual" ? 2 : 1;
+      const bType = b.type === "virtual" ? 2 : 1;
+      return bType - aType;
+    });
     const row = { ...groupValues };
     const errors: ValidateImportError[] = [];
     formattedCellImport.forEach((cell) => {
@@ -144,7 +186,7 @@ export class ConvertorRows2TableData {
         return;
       }
 
-      let address = addresses[cell.keyName];
+      let address = addresses?.[cell.keyName] ?? undefined;
 
       if (!address) {
         if (cell.section === "header") address = cell.address;

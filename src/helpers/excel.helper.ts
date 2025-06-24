@@ -43,7 +43,9 @@ export class ReaderExceljsHelper {
   }
 
   private async eachSheet(sheet: exceljs.Worksheet, sheetIndex: number) {
-    const sheetDesc = this.template[sheetIndex - 1] ?? [];
+    const sheetDesc = this.template[sheetIndex - 1];
+    const trackingRows: RowDataHelper[] = [];
+
     let beginTable = DEFAULT_BEGIN_TABLE;
     let endTable = DEFAULT_END_TABLE;
     let columnIndex = DEFAULT_COLUMN_INDEX;
@@ -63,7 +65,12 @@ export class ReaderExceljsHelper {
         if (this.onCell) await this.onCell(cell);
       }
 
-      if (this.onRow) await this.onRow(this.convertRow(row, section, cells));
+      if (this.onRow) {
+        const rowDataHelper = this.convertRow(row, section, cells);
+        if (i === 1) trackingRows.push(rowDataHelper);
+        if (i === sheet.rowCount) trackingRows.push(rowDataHelper);
+        await this.onRow(rowDataHelper);
+      }
     }
 
     if (this.onSheet)
@@ -75,6 +82,8 @@ export class ReaderExceljsHelper {
         name: sheet.name,
         detail: sheet,
         rowCount: sheet.rowCount,
+        lastestRow: trackingRows[1],
+        firstRow: trackingRows[0],
       });
   }
 
