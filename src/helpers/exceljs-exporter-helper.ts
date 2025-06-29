@@ -59,7 +59,11 @@ export class ExceljsExporterHelper {
       cell.value = {
         formula: cellOpt.formula,
       };
-    } else cell.value = cellOpt.isVariable ? rowData[(cellOpt.value as any).fieldName] : (cellOpt.value as any).hardValue;
+    } else {
+      let value = cellOpt.isVariable ? rowData[(cellOpt.value as any).fieldName] : (cellOpt.value as any).hardValue;
+      if (cellOpt.formatValue) value = cellOpt.formatValue(value);
+      cell.value = value;
+    }
     return cell;
   }
 

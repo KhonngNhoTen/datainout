@@ -1,16 +1,23 @@
 import { CellImportOptions, SheetImportOptions, TableImportOptions } from "../../common/types/import-template.type.js";
-import { FilterImportHandler, ImporterHandlerFunction, ImporterReaderType } from "../../common/types/importer.type.js";
+import {
+  FilterImportHandler,
+  ImporterHandlerFunction,
+  ImporterHandlerInstance,
+  ImporterLoadFunctionOpions,
+  ImporterReaderType,
+} from "../../common/types/importer.type.js";
 import { BaseReaderOptions } from "../../common/types/reader.type.js";
 import { ConvertorRows2TableData } from "../../helpers/convert-row-to-table-data.js";
 import { getFileExtension } from "../../helpers/get-file-extension.js";
 import { TypeParser } from "../../helpers/parse-type.js";
 import { sortByAddress } from "../../helpers/sort-by-address.js";
+import { ImporterHandler } from "../ImporterHandler.js";
 
 export abstract class BaseReader {
   private type: ImporterReaderType;
 
   protected typeParser: TypeParser;
-  protected handlers: ImporterHandlerFunction[] = [];
+  protected handler: ImporterHandlerInstance = {} as any;
   protected chunkSize: number = 20;
   protected convertorRows2TableData: ConvertorRows2TableData = new ConvertorRows2TableData();
   protected templates: SheetImportOptions[] = [];
@@ -21,6 +28,7 @@ export abstract class BaseReader {
   };
   protected sheetIndex: number = 0;
   protected additionalTemplate: CellImportOptions[][] = [];
+  protected importerOpts?: ImporterLoadFunctionOpions;
 
   constructor(opts: BaseReaderOptions) {
     this.type = opts.type;
@@ -29,14 +37,14 @@ export abstract class BaseReader {
 
   protected abstract load(arg: unknown): Promise<any>;
 
-  public async run(templates: SheetImportOptions[], arg: unknown, handlers: ImporterHandlerFunction[], opts?: any) {
+  public async run(templates: SheetImportOptions[], arg: unknown, handler: ImporterHandlerInstance, opts?: any) {
     this.sheetIndex = 0;
     this.templates = templates;
     this.templates[this.sheetIndex];
     this.groupCellDescs = this.formatSheet(this.sheetIndex);
     this.chunkSize = opts?.chunkSize ?? this.chunkSize;
-    this.handlers = handlers;
-
+    this.handler = handler;
+    this.importerOpts = opts;
     await this.load(arg);
   }
 
@@ -54,9 +62,14 @@ export abstract class BaseReader {
   }
 
   protected async callHandlers(data: any, filter: FilterImportHandler) {
-    for (let i = 0; i < this.handlers.length; i++) {
-      const handler = this.handlers[i];
-      await handler(data, filter);
+    if (this.handler) {
+      if (this.handler instanceof ImporterHandler) {
+        //return await this.handler.run(data, filter);
+      } else {
+        for (let i = 0; i < this.handler.length; i++) {
+          data = await this.handler[i](data, filter);
+        }
+      }
     }
   }
 

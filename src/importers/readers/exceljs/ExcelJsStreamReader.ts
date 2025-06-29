@@ -1,17 +1,18 @@
 import * as exceljs from "exceljs";
 import { Readable } from "stream";
-import { FilterImportHandler, ImporterHandlerFunction } from "../../../common/types/importer.type.js";
+import { FilterImportHandler, ImporterHandlerInstance } from "../../../common/types/importer.type.js";
 import { BaseReaderStream } from "../BaserReaderStream.js";
 import { ConvertorRows2TableData } from "../../../helpers/convert-row-to-table-data.js";
 import { SheetImportOptions } from "../../../common/types/import-template.type.js";
+import { SheetSection } from "../../../common/types/common-type.js";
 
 export class ExcelJsStreamReader extends BaseReaderStream {
-  constructor(templates: SheetImportOptions[], readable: Readable, handlers: ImporterHandlerFunction[]) {
+  constructor(templates: SheetImportOptions[], readable: Readable, handlers: ImporterHandlerInstance) {
     super(templates, readable, handlers);
   }
 
   public async load(arg: Readable): Promise<any> {
-    this.convertorRows2TableData = new ConvertorRows2TableData();
+    this.convertorRows2TableData = new ConvertorRows2TableData({ chunkSize: this.importerOpts?.chunkSize });
     const workBookReader = new exceljs.stream.xlsx.WorkbookReader(arg, {
       worksheets: "emit",
     });
@@ -56,19 +57,32 @@ export class ExcelJsStreamReader extends BaseReaderStream {
     this.handleRow(sheet, null);
   }
 
-  private handleRow(workSheet: exceljs.Worksheet, row: exceljs.Row | null) {
-    const { isTrigger, triggerSection, errors, hasError } = this.convertorRows2TableData.push(row, this.templates[this.sheetIndex]);
+  private handleRow(workSheet: exceljs.Worksheet, section: SheetSection, rowIndex: number): void;
+  private handleRow(workSheet: exceljs.Worksheet, row: exceljs.Row | null): void;
+  private handleRow(workSheet: exceljs.Worksheet, arg: unknown, rowIndex?: number) {
+    const { isTrigger, triggerSection, hasError, errors } = rowIndex
+      ? this.convertorRows2TableData.pushBySection(arg as SheetSection, this.templates[this.sheetIndex], rowIndex)
+      : this.convertorRows2TableData.push(arg as any, this.templates[this.sheetIndex]);
 
-    if (hasError) this.listEvents.emitEvent("error", errors);
-
+    if (hasError) this.handleError(errors);
     if (isTrigger) {
       const filter: FilterImportHandler = {
         section: triggerSection,
         sheetIndex: workSheet.id - 1,
         sheetName: workSheet.name,
+        isHasNext: arg !== null,
       };
       const data = this.convertorRows2TableData.pop(triggerSection);
-      (async () => await this.callHandlers({ [triggerSection]: data }, filter))();
+      (async () => await this.callHandlers(data, filter))();
+    }
+  }
+
+  private handleError(errors: Error[]) {
+    if (errors.length === 0) return;
+    if (this.importerOpts?.ignoreErrors === true) throw errors[0];
+
+    for (let i = 0; i < errors.length; i++) {
+      (async () => await this.callHandlers(errors[i], null as any))();
     }
   }
 }

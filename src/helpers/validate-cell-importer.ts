@@ -17,7 +17,9 @@ export function validateCellImport(value: any, cellDes: CellImportOptions, addre
     });
   }
   if (cellDes.validate) {
-    const { isValid, message } = cellDes.validate(value);
+    const result = cellDes.validate(value);
+    if (result instanceof Error) throw result;
+    const { isValid, message } = result;
     if (isValid) {
       const defaultMessage = `${ERROR_MESSAGE.MESSAGE_INVALID_CELL}`;
 

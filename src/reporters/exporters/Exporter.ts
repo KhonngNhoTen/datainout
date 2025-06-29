@@ -46,7 +46,7 @@ export abstract class ExporterStream extends Exporter implements IBaseStream {
     const that = this;
     const run = async function () {
       await that.run(that.templatePath, { ...that.contents, stream: that.streamWriter });
-      that.contents.table.start((items, hasNext, isNewSheet) => that.add(items as any, hasNext, isNewSheet));
+      that.contents.table.start(async (items, hasNext, isNewSheet) => await that.add(items as any, hasNext, isNewSheet));
     };
     run();
   }

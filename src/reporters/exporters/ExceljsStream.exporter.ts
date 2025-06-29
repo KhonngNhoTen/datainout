@@ -4,7 +4,7 @@ import { Writable } from "stream";
 import { ExporterStream } from "./Exporter.js";
 import { ExceljsExporterHelper } from "../../helpers/exceljs-exporter-helper.js";
 import { PartialDataTransfer } from "../PartialDataTransfer.js";
-import { CellReportOptions } from "../../common/types/report-template.type.js";
+import { CellReportOptions, ReportStreamOptions } from "../../common/types/report-template.type.js";
 
 export class ExceljsStreamExporter extends ExporterStream {
   private header: any;
@@ -16,16 +16,27 @@ export class ExceljsStreamExporter extends ExporterStream {
   private workBookWriter?: exceljs.stream.xlsx.WorkbookWriter;
 
   private exporterHelper?: ExceljsExporterHelper;
+  private opts?: ReportStreamOptions;
 
-  constructor(templatePath: string, streamWriter: Writable, contents: { header?: any; footer?: any; table: PartialDataTransfer }) {
+  constructor(
+    templatePath: string,
+    streamWriter: Writable,
+    contents: { header?: any; footer?: any; table: PartialDataTransfer },
+    opts?: ReportStreamOptions
+  ) {
     super(ExceljsStreamExporter.name, templatePath, streamWriter, contents);
+    this.opts = opts;
   }
 
   async run(templatePath: string, contents: { header: any; footer: any; stream: Writable }): Promise<any> {
     this.header = contents.header;
     this.footer = contents.footer;
     this.exporterHelper = new ExceljsExporterHelper(templatePath);
-    this.workBookWriter = new exceljs.stream.xlsx.WorkbookWriter({ stream: contents.stream, useStyles: true });
+    this.workBookWriter = new exceljs.stream.xlsx.WorkbookWriter({
+      stream: contents.stream,
+      useSharedStrings: this.opts?.useSharedStrings,
+      useStyles: this.opts?.useStyles,
+    });
 
     this.createSheet();
   }
@@ -48,11 +59,13 @@ export class ExceljsStreamExporter extends ExporterStream {
       const chunk = chunks[i];
       const tableTemplate = this.exporterHelper?.filterGroupCellDesc("table", this.sheetDescIndex);
       if (chunk && tableTemplate) {
-        this.exporterHelper?.addRow(chunk, tableTemplate, this.workSheet);
+        const row = this.exporterHelper?.addRow(chunk, tableTemplate, this.workSheet);
+        if (!this.opts?.useStyles) row?.commit();
         createdRow++;
       }
     }
     this.listEvents.emitEvent("data", { chunkLenght: chunks.length, createdRow });
+    await new Promise((resolve) => setTimeout(resolve, this.opts?.sleepTime ?? 10));
   }
 
   private doneCurrentlySheet() {

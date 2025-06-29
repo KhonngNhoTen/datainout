@@ -48,11 +48,16 @@ export class Reporter {
     streamWriter: Writable,
     opts?: ReportStreamOptions
   ): IBaseStream {
-    const stream = new ExceljsStreamExporter(this.templatePath, streamWriter, {
-      footer: content.footer,
-      header: content.header,
-      table: content.table,
-    });
+    const stream = new ExceljsStreamExporter(
+      this.templatePath,
+      streamWriter,
+      {
+        footer: content.footer,
+        header: content.header,
+        table: content.table,
+      },
+      opts
+    );
     if (opts?.additionalCell) stream.addCellTemplate(opts.additionalCell);
 
     return stream;

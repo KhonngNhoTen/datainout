@@ -21,6 +21,8 @@ export class ReaderExceljsHelper {
   private onRow?: (row: RowDataHelper) => Promise<any>;
   private onCell?: (cell: CellDataHelper) => Promise<any>;
 
+  isStop: boolean = false;
+
   constructor(opts?: ExcelReaderHelperOptions) {
     this.onCell = opts?.onCell;
     this.onRow = opts?.onRow;
@@ -36,7 +38,7 @@ export class ReaderExceljsHelper {
     if (arg instanceof Buffer) await workBook.xlsx.load(arg as unknown as exceljs.Buffer);
     else await workBook.xlsx.readFile(arg as string);
 
-    for (let i = 0; i < workBook.worksheets.length; i++) {
+    for (let i = 0; !this.isStop && i < workBook.worksheets.length; i++) {
       const workSheet = workBook.getWorksheet(i + 1);
       if (workSheet) await this.eachSheet(workSheet, i + 1);
     }
@@ -50,7 +52,7 @@ export class ReaderExceljsHelper {
     let endTable = DEFAULT_END_TABLE;
     let columnIndex = DEFAULT_COLUMN_INDEX;
 
-    for (let i = 1; i <= sheet.rowCount; i++) {
+    for (let i = 1; !this.isStop && i <= sheet.rowCount; i++) {
       const row = sheet.getRow(i);
       beginTable = ReaderExceljsHelper.beginTableAt(row, sheetDesc, this.isSampleExcel) ?? beginTable;
       endTable = ReaderExceljsHelper.endTableAt(row, sheetDesc, this.isSampleExcel) ?? endTable;

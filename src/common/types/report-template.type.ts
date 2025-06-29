@@ -13,6 +13,7 @@ export type CellReportOptions = {
   style: Partial<CellStyle>;
   isVariable: boolean;
   formula?: Cell["formula"];
+  formatValue?: (data: any) => any;
 };
 
 export type SheetReportOptions = SheetExcelOption & {
@@ -37,4 +38,7 @@ export type ReportOptions = {
 export type ReportStreamOptions = {
   additionalCell?: CellReportOptions[];
   type?: ExporterStreamOutputType;
+  useStyles?: boolean;
+  useSharedStrings?: boolean;
+  sleepTime?: number;
 };

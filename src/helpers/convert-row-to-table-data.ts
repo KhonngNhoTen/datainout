@@ -8,7 +8,12 @@ import { validateCellImport } from "./validate-cell-importer.js";
 import { ConvertorRows2TableDataOpts, GroupValueRow } from "../common/types/convert-row-to-table-data.type.js";
 import { ValidateImportError } from "../common/error/ValidateError.js";
 
-type PushResultTableData = { isTrigger: boolean; triggerSection: SheetSection; errors: ValidateImportError[]; hasError: boolean };
+type PushResultTableData = {
+  isTrigger: boolean;
+  triggerSection: SheetSection;
+  errors: ValidateImportError[];
+  hasError: boolean;
+};
 export class ConvertorRows2TableData {
   private chunkSize: number;
   private section?: SheetSection;
@@ -73,7 +78,12 @@ export class ConvertorRows2TableData {
     if (section === "table") this.container.table?.push(result.groupValues);
     else this.container[section] = result.groupValues;
 
-    return { isTrigger: true, triggerSection: section, errors: result.errors, hasError: result.errors.length !== 0 };
+    return {
+      isTrigger: true,
+      triggerSection: section,
+      errors: result.errors,
+      hasError: result.errors.length !== 0,
+    };
   }
 
   pop(section: SheetSection) {
@@ -181,10 +191,8 @@ export class ConvertorRows2TableData {
     formattedCellImport.forEach((cell) => {
       let value = groupValues[cell.keyName];
       if (cell.setValue) value = cell.setValue(value, row);
-      if (cell.type && cell.type !== "virtual") {
-        value = (typeParser as any)[cell.type](value);
-        return;
-      }
+
+      if (cell.type && cell.type !== "virtual") value = (typeParser as any)[cell.type](value);
 
       let address = addresses?.[cell.keyName] ?? undefined;
 
