@@ -34,10 +34,15 @@
     "exceljs": "^4.4.0"
   },
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
+    "./importers": {
+      "import": {
+        "import": "./dist/importers/index.js",
+        "types": "./dist/importers/index.d.ts"
+      },
+      "require": {
+        "require": "./dist/importers/index.cjs",
+        "types": "./dist/importers/index.d.cts"
+      }
     },
     "./reporters": {
       "import": {
@@ -49,21 +54,19 @@
         "types": "./dist/reporters/index.d.cts"
       }
     },
-    "./importers": {
+    "./template-generators": {
       "import": {
-        "import": "./dist/importers/index.js",
-        "types": "./dist/importers/index.d.ts"
+        "import": "./dist/template-generators/index.js",
+        "types": "./dist/template-generators/index.d.ts"
       },
       "require": {
-        "require": "./dist/importers/index.cjs",
-        "types": "./dist/importers/index.d.cts"
+        "require": "./dist/template-generators/index.cjs",
+        "types": "./dist/template-generators/index.d.cts"
       }
     }
   },
   "bin": {
-    "datainout import:template": "./dist/bin/import-convert.script.js",
-    "datainout report:template excel-excel": "./dist/bin/template-report/excel-generate.js",
-    "init": "./dist/bin/init-datainout.script.js"
+    "datainout": "./dist/bin/cli.cjs"
   },
   "peerDependencies": {
     "ejs": "^3.1.10",

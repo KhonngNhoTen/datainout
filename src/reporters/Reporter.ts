@@ -1,72 +1,65 @@
-import { CronTime } from "cron";
+import * as fs from "fs/promises";
+import { Writable } from "stream";
+import { ExporterOutputType, ExporterStreamOutputType } from "../common/types/exporter.type.js";
+import { getConfig } from "../helpers/datainout-config.js";
+import { pathReport } from "../helpers/path-file.js";
+import { EjsHtmlExporter } from "./exporters/EjsHtml.exporter.js";
+import { EjsPdfExporter } from "./exporters/EjsPdf.exporter.js";
+import { ExceljsExporter } from "./exporters/Exceljs.exporter.js";
 import { Exporter } from "./exporters/Exporter.js";
-import { HandlerCron } from "./schedule/Cron.js";
-import { CronManager } from "./schedule/CronManager.js";
-import { ReportData, ExporterList, ExporterFactory, CreateStreamOpts } from "./type.js";
-import { pathReport } from "../helper/path-file.js";
-import { exporterFactory } from "./exporters/ExporterFactory.js";
-import { getConfig } from "../datainout-config.js";
-import { PassThrough } from "stream";
-import { ReportDataIterator } from "./ReportDataIterator.js";
-
-type ReporterOptions = {
-  exporterType: ExporterList;
-  templatePath: string;
-};
+import { PartialDataTransfer } from "./PartialDataTransfer.js";
+import { ExceljsStreamExporter } from "./exporters/ExceljsStream.exporter.js";
+import { TableData } from "../common/types/common-type.js";
+import { IBaseStream } from "../common/core/ListEvents.js";
+import { CellReportOptions, ReportOptions, ReportStreamOptions } from "../common/types/report-template.type.js";
 
 export class Reporter {
-  private exporter: Exporter;
-  private cronManager: CronManager;
+  protected templatePath: string;
 
-  constructor(opts: ReporterOptions) {
-    const myExporterFactory: ExporterFactory = getConfig()?.report?.expoterFactory ?? exporterFactory;
-    this.exporter = myExporterFactory(opts.exporterType, pathReport(opts.templatePath, "templateDir"));
-    this.cronManager = new CronManager(this);
+  constructor(templatePath: string) {
+    this.templatePath = pathReport(templatePath, "templateDir");
+    this.templatePath = `${this.templatePath}${getConfig().templateExtension ?? ".js"}`;
   }
-  async writeFile(data: ReportData, reportPath: string): Promise<any>;
-  async writeFile(data: ReportData[], reportPath: string): Promise<any>;
-  async writeFile(data: ReportData | ReportData[], reportPath: string) {
-    console.log(`Gernerating report ....`);
+
+  async buffer(data: TableData, opts?: ReportOptions): Promise<Buffer>;
+  async buffer(data: any, opts?: ReportOptions): Promise<Buffer>;
+  async buffer(data: unknown, opts?: ReportOptions): Promise<Buffer> {
+    const type = opts?.type ?? "excel";
+    let exporter: Exporter | undefined;
+    if (type === "html") exporter = new EjsHtmlExporter();
+    if (type === "excel") exporter = new ExceljsExporter();
+    if (type === "pdf") exporter = new EjsPdfExporter();
+    if (!exporter) throw new Error("Exporter not setup");
+
+    if (opts?.additionalCell) exporter.addCellTemplate(opts.additionalCell);
+    return (await exporter.run(this.templatePath, data)) as Buffer;
+  }
+
+  async write(reportPath: string, data: TableData, opts?: ReportOptions): Promise<any>;
+  async write(reportPath: string, data: any, opts?: ReportOptions): Promise<any>;
+  async write(reportPath: string, data: any, opts?: ReportOptions) {
+    const buffer = await this.buffer(data, opts);
     reportPath = pathReport(reportPath, "reportDir");
-    await this.exporter.writeFile(data, reportPath);
-    console.log(`Generate report successfully. File report at ${reportPath}`);
+    await fs.writeFile(reportPath, Uint8Array.from(buffer));
   }
 
-  async createBuffer(data: ReportData): Promise<Buffer>;
-  async createBuffer(data: ReportData[]): Promise<Buffer>;
-  async createBuffer(data: ReportData | ReportData[]): Promise<Buffer> {
-    return await this.exporter.buffer(data);
-  }
+  createStream(
+    content: { header?: any; footer?: any; table: PartialDataTransfer },
+    streamWriter: Writable,
+    opts?: ReportStreamOptions
+  ): IBaseStream {
+    const stream = new ExceljsStreamExporter(
+      this.templatePath,
+      streamWriter,
+      {
+        footer: content.footer,
+        header: content.header,
+        table: content.table,
+      },
+      opts
+    );
+    if (opts?.additionalCell) stream.addCellTemplate(opts.additionalCell);
 
-  crons() {
-    return this.crons;
-  }
-
-  createCron(scheduling: string | Date, name: string, onTick?: HandlerCron, cronTime?: CronTime) {
-    return this.cronManager.createCron(scheduling, name, onTick, cronTime);
-  }
-
-  createStream(opts: CreateStreamOpts | (Omit<CreateStreamOpts, "data"> & { data: ReportDataIterator[] })): PassThrough {
-    if (opts.data[0] instanceof ReportDataIterator) opts.data = opts.data.map((e) => ({ table: e })) as any;
-
-    const options: CreateStreamOpts = opts as any;
-    const writerStream = this.exporter.writerStream(options);
-
-    let countDoneData = 0;
-    for (let i = 0; i < options.data.length; i++) {
-      const data = options.data[i];
-      writerStream.setContent({ sheetName: data.sheetName, footer: data.header, header: data.header });
-
-      const dataIteratorStream = data.table.createStream();
-
-      dataIteratorStream.on("data", async (data) => writerStream.add(JSON.parse(data.toString()), i));
-
-      dataIteratorStream.on("end", async () => {
-        await writerStream.doneSheet(i);
-        countDoneData++;
-        if (countDoneData === options.data.length) await writerStream.allDone();
-      });
-    }
-    return writerStream.stream();
+    return stream;
   }
 }
