@@ -1,10 +1,10 @@
-import { BaseAttribute, SheetExcelOption, SheetSection } from "./common-type.js";
+import { AttributeType, BaseAttribute, SheetExcelOption, SheetSection } from "./common-type.js";
 
 export type BaseAttributeImporter = {
+  type: AttributeType;
   required?: boolean;
   setValue?: (attributeValue?: any, row?: Record<string, any>) => any;
   validate?: (val: any) => { isValid: boolean; message?: string } | Error;
-  section: SheetSection;
 } & BaseAttribute;
 
 /** Excel import template */
@@ -18,9 +18,4 @@ export type CellImportOptions = {
   };
 } & BaseAttributeImporter;
 
-export type SheetImportOptions = Omit<SheetExcelOption, "cells"> & { cells: CellImportOptions[] };
-
-export type TableImportOptions = {
-  sheets: SheetImportOptions[];
-  name: string;
-};
+export type SheetImportOptions = SheetExcelOption<CellImportOptions>;

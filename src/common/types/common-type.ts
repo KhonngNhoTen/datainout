@@ -10,14 +10,15 @@ export type DataInoutInput = TableData | PageData;
 
 export type AttributeType = "number" | "string" | "boolean" | "object" | "date" | "virtual";
 export type BaseAttribute = {
-  type: AttributeType;
   keyName: string;
+  index?: number;
+  section: SheetSection;
 };
 
 export type SheetSection = "header" | "table" | "footer";
 
-export type SheetExcelOption = {
-  cells: any[];
+export type SheetExcelOption<T extends BaseAttribute> = {
+  cells: T[];
   sheetIndex: number;
   sheetName: string;
   beginTableAt: number;
@@ -33,4 +34,9 @@ export type EventType = {
 
   /** Handle error. Return false to cancel import, otherhands return true */
   error: (error: Error) => boolean;
+};
+
+export type TableExcelOptions<T> = {
+  sheets: T[];
+  name: string;
 };

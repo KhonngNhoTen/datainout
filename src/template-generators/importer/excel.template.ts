@@ -1,16 +1,17 @@
 import * as exceljs from "exceljs";
 import * as fs from "fs/promises";
-import { CellImportOptions, SheetImportOptions, TableImportOptions } from "../../common/types/import-template.type.js";
+import { CellImportOptions, SheetImportOptions } from "../../common/types/import-template.type.js";
 import { getConfig } from "../../helpers/datainout-config.js";
 import { pathImport } from "../../helpers/path-file.js";
 import { TemplateGenerator } from "../TemplateGenerator.js";
 import { ReaderExceljsHelper } from "../../helpers/excel.helper.js";
 import { CellDataHelper, SheetDataHelper } from "../../common/types/excel-reader-helper.type.js";
-import { SheetSection } from "../../common/types/common-type.js";
+import { SheetSection, TableExcelOptions } from "../../common/types/common-type.js";
+import { ExcelTemplateManager } from "../../common/core/Template.js";
 
 export class ExcelTemplateImport extends TemplateGenerator {
   private excelReaderHelper: ReaderExceljsHelper;
-  private excelContent: TableImportOptions = {
+  private excelContent: TableExcelOptions<SheetImportOptions> = {
     sheets: [],
     name: "",
   };
@@ -21,6 +22,7 @@ export class ExcelTemplateImport extends TemplateGenerator {
     this.excelReaderHelper = new ReaderExceljsHelper({
       onSheet: async (data) => await this.onSheet(data),
       onCell: async (data) => await this.onCell(data),
+      templateManager: new ExcelTemplateManager(),
       isSampleExcel: true,
     });
   }
@@ -53,7 +55,7 @@ export class ExcelTemplateImport extends TemplateGenerator {
     }
   }
 
-  private genContentFile(excelContent: TableImportOptions): string {
+  private genContentFile(excelContent: TableExcelOptions<SheetImportOptions>): string {
     if (getConfig()?.templateExtension === ".js")
       return `/** @type {import("datainout").ImportFileDesciptionOptions} */
 const template = ${JSON.stringify(excelContent, null, undefined)};

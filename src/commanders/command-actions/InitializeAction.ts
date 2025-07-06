@@ -15,7 +15,6 @@ export class InitializeAction implements ICommandAction {
       _path,
       `/** @type {import("datainout").DataInoutConfigOptions} */
 module.exports = {
-  dateFormat: "DD-MM-YYYY hh:mm:ss",
   templateExtension: ".js",
 };`
     );
@@ -27,7 +26,6 @@ module.exports = {
       _path,
       `import { DataInoutConfigOptions } from 'datainout/types' 
 export default {
-  dateFormat: "DD-MM-YYYY hh:mm:ss",
   templateExtension: ".ts",
 } as DataInoutConfigOptions;`
     );

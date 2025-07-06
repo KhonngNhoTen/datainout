@@ -7,6 +7,7 @@ import { DEFAULT_BEGIN_TABLE, DEFAULT_END_TABLE, ReaderExceljsHelper } from "./e
 import { validateCellImport } from "./validate-cell-importer.js";
 import { ConvertorRows2TableDataOpts, GroupValueRow } from "../common/types/convert-row-to-table-data.type.js";
 import { ValidateImportError } from "../common/error/ValidateError.js";
+import { ExcelTemplateManager } from "../common/core/Template.js";
 
 type PushResultTableData = {
   isTrigger: boolean;
@@ -21,10 +22,12 @@ export class ConvertorRows2TableData {
   private container: TableData = { header: {}, footer: {}, table: [] };
   private beginTable: number = DEFAULT_BEGIN_TABLE;
   private endTable: number = DEFAULT_END_TABLE;
+  private templateManager: ExcelTemplateManager<CellImportOptions>;
 
   constructor(opts?: ConvertorRows2TableDataOpts) {
     this.chunkSize = opts?.chunkSize ?? 10;
     this.typeParser = opts?.typeParser ?? new TypeParser();
+    this.templateManager = opts?.templateManager ?? new ExcelTemplateManager();
   }
 
   push(row: RowDataHelper | null, template: SheetImportOptions): PushResultTableData;
@@ -124,16 +127,18 @@ export class ConvertorRows2TableData {
       section = arg.section;
     } else row = arg;
 
-    let { beginTable, endTable } = this;
-    const drafBeginTable = ReaderExceljsHelper.beginTableAt(row, template, false);
-    const drafEndTable = ReaderExceljsHelper.endTableAt(row, template, false);
+    // let { beginTable, endTable } = this;
+    // const drafBeginTable = ReaderExceljsHelper.beginTableAt(row, template, false);
+    // const drafEndTable = ReaderExceljsHelper.endTableAt(row, template, false);
 
-    if (beginTable === DEFAULT_BEGIN_TABLE && drafBeginTable) beginTable = drafBeginTable;
-    if (endTable === DEFAULT_END_TABLE && drafEndTable) endTable = drafEndTable;
+    // if (beginTable === DEFAULT_BEGIN_TABLE && drafBeginTable) beginTable = drafBeginTable;
+    // if (endTable === DEFAULT_END_TABLE && drafEndTable) endTable = drafEndTable;
 
+    const beginTable = this.templateManager.ActualTableStartRow ?? DEFAULT_BEGIN_TABLE;
+    const endTable = this.templateManager.ActualTableEndRow ?? DEFAULT_END_TABLE;
     if (!arg.detail) section = ReaderExceljsHelper.getSection(row, beginTable, endTable);
-    this.endTable = endTable;
-    this.beginTable = beginTable;
+    // this.endTable = endTable;
+    // this.beginTable = beginTable;
     return { row, section, beginTable, endTable };
   }
 

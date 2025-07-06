@@ -1,5 +1,7 @@
 import * as exceljs from "exceljs";
 import { AttributeType, SheetExcelOption, SheetSection } from "./common-type.js";
+import { ExcelTemplateManager } from "../core/Template.js";
+import { CellImportOptions } from "./import-template.type.js";
 
 export type CellDataHelper = {
   rowIndex: number;
@@ -41,5 +43,6 @@ export type ExcelReaderHelperOptions = {
   onRow?: (row: RowDataHelper) => Promise<any>;
   onCell?: (cell: CellDataHelper) => Promise<any>;
   isSampleExcel?: boolean;
-  template?: SheetExcelOption[];
+  template?: SheetExcelOption<any>[];
+  templateManager?: ExcelTemplateManager<CellImportOptions>;
 };

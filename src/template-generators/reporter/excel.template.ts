@@ -1,15 +1,17 @@
 import { TemplateGenerator } from "../TemplateGenerator.js";
 import * as exceljs from "exceljs";
 import * as fs from "fs/promises";
-import { CellReportOptions, TableReportOptions, SheetReportOptions } from "../../common/types/report-template.type.js";
+import { CellReportOptions, SheetReportOptions } from "../../common/types/report-template.type.js";
 import { getConfig } from "../../helpers/datainout-config.js";
 import { pathReport } from "../../helpers/path-file.js";
 import { ReaderExceljsHelper } from "../../helpers/excel.helper.js";
 import { CellDataHelper, RowDataHelper, SheetDataHelper } from "../../common/types/excel-reader-helper.type.js";
+import { ExcelTemplateManager } from "../../common/core/Template.js";
+import { TableExcelOptions } from "../../common/types/common-type.js";
 
 export class ExcelTemplateReport extends TemplateGenerator {
   private excelReaderHelper: ReaderExceljsHelper;
-  private excelContent: TableReportOptions = {
+  private excelContent: TableExcelOptions<SheetReportOptions> = {
     sheets: [],
     name: "",
   };
@@ -21,6 +23,7 @@ export class ExcelTemplateReport extends TemplateGenerator {
       onSheet: async (data) => await this.onSheet(data),
       onCell: async (data) => await this.onCell(data),
       onRow: async (data) => await this.onRow(data),
+      templateManager: new ExcelTemplateManager(),
       isSampleExcel: true,
     });
   }
@@ -37,6 +40,8 @@ export class ExcelTemplateReport extends TemplateGenerator {
         section: cell.section,
         fullAddress,
         formula: cell.formula,
+        keyName: cell?.variableValue?.fieldName ?? cell.label ?? "",
+        index: this.currentSheet.cells.length + 1,
       };
       this.currentSheet.cells.push(cellFormat);
     }

@@ -31,7 +31,8 @@
     "commander": "^13.0.0",
     "cron": "^3.5.0",
     "dayjs": "^1.11.13",
-    "exceljs": "^4.4.0"
+    "exceljs": "^4.4.0",
+    "piscina": "^5.1.2"
   },
   "exports": {
     "./importers": {

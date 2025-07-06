@@ -2,16 +2,17 @@ import * as ejs from "ejs";
 import * as puppeteer from "puppeteer";
 import { PageData } from "../../common/types/common-type.js";
 import { Exporter } from "./Exporter.js";
+import { ExporterOptions } from "../../common/types/exporter.type.js";
 
 export class EjsPdfExporter extends Exporter {
-  protected override template: string = "";
+  protected template: string = "";
 
   constructor() {
-    super({ name: EjsPdfExporter.name, outputType: "pdf" });
+    super(EjsPdfExporter.name, "pdf");
   }
 
-  async run(templatePath: string, data: PageData): Promise<Buffer> {
-    this.template = ejs.render(templatePath, data);
+  async run(data: PageData, options: ExporterOptions): Promise<Buffer> {
+    this.template = ejs.render(options?.templatePath ?? "", data);
     return this.exportPdf(this.template);
   }
 

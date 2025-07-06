@@ -1,52 +1,42 @@
 import { EventRegister, IBaseStream } from "../../common/core/ListEvents.js";
 import { EventType } from "../../common/types/common-type.js";
-import { ExporterOptions, ExporterOutputType, ExporterMethodType } from "../../common/types/exporter.type.js";
+import { ExporterOutputType, ExporterMethodType, ExporterOptions, ExporterStreamOptions } from "../../common/types/exporter.type.js";
 import { Writable } from "stream";
 import { PartialDataTransfer } from "../PartialDataTransfer.js";
-import { CellReportOptions } from "../../common/types/report-template.type.js";
+import { ExcelTemplateManager } from "../../common/core/Template.js";
+import { CellReportOptions, ReportStreamOptions } from "../../common/types/report-template.type.js";
 
 export abstract class Exporter {
   protected outputType: ExporterOutputType;
   protected methodType: ExporterMethodType;
   protected name: string;
+  protected options?: any;
 
-  protected template: any;
-
-  constructor(opts: ExporterOptions) {
-    this.name = opts.name;
-    this.outputType = opts.outputType;
-    this.methodType = opts?.methodType ?? "full-load";
+  constructor(name: string, outputType: ExporterOutputType, methodType?: ExporterMethodType) {
+    this.name = name;
+    this.outputType = outputType;
+    this.methodType = methodType ?? "full-load";
   }
 
-  abstract run(templatePath: string, data: any): Promise<Buffer | Writable>;
-
-  addCellTemplate(cells: CellReportOptions[], sheetIndex: number = 0) {
-    throw Error("This function only supports for excels");
-  }
+  abstract run(data: any, options?: ExporterOptions): Promise<Buffer | Writable>;
 }
 
 export abstract class ExporterStream extends Exporter implements IBaseStream {
   protected listEvents: EventRegister = new EventRegister();
-  protected contents: { header?: any; footer?: any; table: PartialDataTransfer };
-  protected templatePath: string;
+  protected templateManager: ExcelTemplateManager<CellReportOptions> = {} as any;
   protected streamWriter: Writable;
-  constructor(
-    name: string,
-    templatePath: string,
-    streamWriter: Writable,
-    contents: { header?: any; footer?: any; table: PartialDataTransfer }
-  ) {
-    super({ name, outputType: "excel" });
-    this.contents = contents;
-    this.templatePath = templatePath;
+  protected override options: ExporterStreamOptions = {} as any;
+  constructor(name: string, streamWriter: Writable, options: ExporterStreamOptions) {
+    super(name, "excel");
     this.streamWriter = streamWriter;
+    this.options = options;
   }
 
   start(): void {
     const that = this;
     const run = async function () {
-      await that.run(that.templatePath, { ...that.contents, stream: that.streamWriter });
-      that.contents.table.start(async (items, hasNext, isNewSheet) => await that.add(items as any, hasNext, isNewSheet));
+      await that.run(that.options.content, that.options);
+      that.options.content.table.start(async (items, hasNext, isNewSheet) => await that.add(items as any, hasNext, isNewSheet));
     };
     run();
   }

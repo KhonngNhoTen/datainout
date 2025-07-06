@@ -1,11 +1,11 @@
 import { PaperSize, Style as CellStyle, Cell, Location } from "exceljs";
-import { SheetExcelOption, SheetSection } from "./common-type.js";
+import { BaseAttribute, SheetExcelOption, SheetSection } from "./common-type.js";
 import { ExporterOutputType, ExporterStreamOutputType } from "./exporter.type.js";
+import { ExcelTemplateManager } from "../core/Template.js";
 /** Excel report template */
 export type CellReportOptions = {
   address: string;
   fullAddress: Cell["fullAddress"];
-  section?: SheetSection;
   value: {
     hardValue?: any;
     fieldName?: string;
@@ -14,31 +14,24 @@ export type CellReportOptions = {
   isVariable: boolean;
   formula?: Cell["formula"];
   formatValue?: (data: any) => any;
-};
+} & BaseAttribute;
 
-export type SheetReportOptions = SheetExcelOption & {
+export type SheetReportOptions = SheetExcelOption<CellReportOptions> & {
   pageSize?: PaperSize;
   merges?: Record<string, { model: Location }>;
-  cells: CellReportOptions[];
   columnWidths?: (number | undefined)[];
   rowHeights: Record<string, number>;
 };
 
-export type TableReportOptions = {
-  sheets: SheetReportOptions[];
-  name: string;
-};
-
 export type ReportOptions = {
   onError?: (data: any) => void;
-  additionalCell?: CellReportOptions[];
-  type?: ExporterOutputType;
+  chunkSize?: number;
+  useStyle?: boolean;
 };
 
 export type ReportStreamOptions = {
-  additionalCell?: CellReportOptions[];
-  type?: ExporterStreamOutputType;
   useStyles?: boolean;
   useSharedStrings?: boolean;
+  workerSize?: number;
   sleepTime?: number;
 };

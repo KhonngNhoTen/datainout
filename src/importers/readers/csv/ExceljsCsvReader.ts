@@ -4,12 +4,17 @@ import { FilterImportHandler } from "../../../common/types/importer.type.js";
 import { BaseReader } from "../BaseReader.js";
 import { SheetSection } from "../../../common/types/common-type.js";
 import { ReaderExceljsHelper } from "../../../helpers/excel.helper.js";
+import { ConvertorRows2TableData } from "../../../helpers/convert-row-to-table-data.js";
 
 export class ExcelJsCsvReader extends BaseReader {
   constructor() {
     super({ type: "csv" });
   }
   public async load(arg: unknown): Promise<any> {
+    this.convertorRows2TableData = new ConvertorRows2TableData({
+      chunkSize: this.options?.chunkSize,
+      templateManager: this.templateManager,
+    });
     let workSheet: exceljs.Worksheet;
     const workBook = new exceljs.Workbook();
 
@@ -22,6 +27,8 @@ export class ExcelJsCsvReader extends BaseReader {
 
     for (let i = 0; i < workSheet.actualRowCount; i++) {
       const row = workSheet.getRow(i + 1);
+      this.templateManager.defineActualTableStartRow(ReaderExceljsHelper.beginTableAt(row, this.templateManager.SheetTemplate, false));
+      this.templateManager.defineActualTableEndRow(ReaderExceljsHelper.endTableAt(row, this.templateManager.SheetTemplate, false));
       await this.handleRow(workSheet, row);
     }
 
@@ -34,8 +41,8 @@ export class ExcelJsCsvReader extends BaseReader {
   private async handleRow(workSheet: exceljs.Worksheet, row: exceljs.Row | null): Promise<void>;
   private async handleRow(workSheet: exceljs.Worksheet, arg: unknown, rowIndex?: number) {
     const { isTrigger, triggerSection, hasError, errors } = rowIndex
-      ? this.convertorRows2TableData.pushBySection(arg as SheetSection, this.templates[this.sheetIndex], rowIndex)
-      : this.convertorRows2TableData.push(arg as any, this.templates[this.sheetIndex]);
+      ? this.convertorRows2TableData.pushBySection(arg as SheetSection, this.templateManager.SheetTemplate, rowIndex)
+      : this.convertorRows2TableData.push(arg as any, this.templateManager.SheetTemplate);
 
     if (hasError) await this.handleError(errors);
 
@@ -53,7 +60,7 @@ export class ExcelJsCsvReader extends BaseReader {
 
   private async handleError(errors: Error[]) {
     if (errors.length === 0) return;
-    if (this.importerOpts?.ignoreErrors === true) throw errors[0];
+    if (this.options?.ignoreErrors === true) throw errors[0];
 
     for (let i = 0; i < errors.length; i++) {
       await this.callHandlers(errors[i], null as any);

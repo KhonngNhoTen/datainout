@@ -1,56 +1,25 @@
 import * as exceljs from "exceljs";
 import { SheetSection } from "../common/types/common-type.js";
-import { CellReportOptions, SheetReportOptions, TableReportOptions } from "../common/types/report-template.type.js";
+import { CellReportOptions, SheetReportOptions } from "../common/types/report-template.type.js";
 import { getFileExtension } from "./get-file-extension.js";
+import { ExcelTemplateManager } from "../common/core/Template.js";
 
 type FilterGroupCellDescOpts = "header" | "table" | "footer";
 
 export class ExceljsExporterHelper {
-  groupCellDescs: { [k in SheetSection]: CellReportOptions[] }[] = [];
-  sheetsInfor: Omit<SheetReportOptions, "cells">[] = [];
-
-  constructor(templatePath: string) {
-    const { groupCells, sheetInformation } = this.getGroupCellDescs(templatePath);
-    this.groupCellDescs = groupCells;
-    this.sheetsInfor = sheetInformation;
+  templateManager: ExcelTemplateManager<CellReportOptions>;
+  useStyle: boolean;
+  constructor(templateManager: ExcelTemplateManager<CellReportOptions>, useStyle?: boolean) {
+    this.templateManager = templateManager;
+    this.useStyle = useStyle ?? false;
   }
 
   filterGroupCellDesc(opts: FilterGroupCellDescOpts, sheetIndex: number): CellReportOptions[] | null {
-    const sheetTemplate = this.groupCellDescs[sheetIndex];
-    return sheetTemplate[opts];
+    return this.templateManager.GroupCells[opts];
   }
 
-  getSheetInformation(sheetIndex: number) {
-    return this.sheetsInfor[sheetIndex];
-  }
-
-  getGroupCellDescs(templatePath: string) {
-    const template: TableReportOptions = getFileExtension(templatePath) === "js" ? require(templatePath) : require(templatePath).default;
-    const groupCells: { [k in SheetSection]: CellReportOptions[] }[] = [];
-    const sheetInformation: Omit<SheetReportOptions, "cells">[] = [];
-
-    template.sheets.forEach((sheet) => {
-      sheetInformation.push({
-        beginTableAt: sheet.beginTableAt,
-        endTableAt: sheet.endTableAt,
-        keyTableAt: sheet.keyTableAt,
-        sheetIndex: sheet.sheetIndex,
-        sheetName: sheet.sheetName,
-        rowHeights: sheet.rowHeights,
-        columnWidths: sheet.columnWidths,
-        merges: sheet.merges,
-        pageSize: sheet.pageSize,
-      });
-      const cellsDes: any = {};
-      sheet.cells.forEach((cell) => {
-        const section = cell.section ?? "header";
-        if (!cellsDes[section]) cellsDes[section] = [cell];
-        else cellsDes[section]?.push(cell);
-      });
-      groupCells.push(cellsDes);
-    });
-
-    return { sheetInformation, groupCells };
+  getSheetInformation() {
+    return this.templateManager.SheetInformation;
   }
 
   setCell(rowData: any, cellOpt: CellReportOptions, cell: exceljs.Cell): exceljs.Cell {
@@ -94,6 +63,20 @@ export class ExceljsExporterHelper {
     }
 
     return row;
+  }
+
+  addRows(values: any[], cellsOpts: CellReportOptions[], workSheet: exceljs.Worksheet): exceljs.Row[] {
+    const rows: exceljs.Row[] = values.map((value) => {
+      const row = workSheet.addRow([]);
+      for (let i = 0; i < cellsOpts.length; i++) {
+        const cellsOpt = cellsOpts[i];
+        const cell = row.getCell(cellsOpt.fullAddress.col);
+        this.setCell(value, cellsOpt, cell);
+      }
+      if (!this.useStyle) row.commit();
+      return row;
+    });
+    return rows;
   }
 
   setHeader(header: any, cellsOpts: CellReportOptions[], beginTableAt: number, workSheet: exceljs.Worksheet) {
@@ -147,12 +130,5 @@ export class ExceljsExporterHelper {
     Object.keys(rowHeights).forEach((rowIndex, i) => {
       if (rowHeights[rowIndex]) sheet.getRow(rowHeights[i]).height = rowHeights[rowIndex];
     });
-  }
-
-  addCellTemplate(cells: CellReportOptions[], sheetIndex: number = 0) {
-    for (let i = 0; i < cells.length; i++) {
-      const section = cells[i].section;
-      this.groupCellDescs[sheetIndex][section ?? "header"].push(...cells);
-    }
   }
 }

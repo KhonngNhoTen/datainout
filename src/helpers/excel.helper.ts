@@ -1,6 +1,8 @@
 import { AttributeType, SheetExcelOption, SheetSection } from "../common/types/common-type.js";
 import * as exceljs from "exceljs";
 import { CellDataHelper, ExcelReaderHelperOptions, RowDataHelper, SheetDataHelper } from "../common/types/excel-reader-helper.type.js";
+import { CellImportOptions } from "../common/types/import-template.type.js";
+import { ExcelTemplateManager } from "../common/core/Template.js";
 
 export const SYNTAX = {
   VARIABLE_TABLE_SYNTAX: "$$",
@@ -15,8 +17,8 @@ export const DEFAULT_COLUMN_INDEX = 1;
 
 export class ReaderExceljsHelper {
   private isSampleExcel: boolean = true;
-  private template: SheetExcelOption[] = [];
-
+  // private template: SheetExcelOption<CellImportOptions> = [];
+  private templateManager: ExcelTemplateManager<CellImportOptions>;
   private onSheet?: (row: SheetDataHelper) => Promise<any>;
   private onRow?: (row: RowDataHelper) => Promise<any>;
   private onCell?: (cell: CellDataHelper) => Promise<any>;
@@ -28,7 +30,7 @@ export class ReaderExceljsHelper {
     this.onRow = opts?.onRow;
     this.onSheet = opts?.onSheet;
     this.isSampleExcel = opts?.isSampleExcel ?? true;
-    this.template = opts?.template ?? [];
+    this.templateManager = opts?.templateManager ?? new ExcelTemplateManager();
   }
 
   async load(file: string): Promise<any>;
@@ -45,20 +47,24 @@ export class ReaderExceljsHelper {
   }
 
   private async eachSheet(sheet: exceljs.Worksheet, sheetIndex: number) {
-    const sheetDesc = this.template[sheetIndex - 1];
+    this.templateManager.SheetIndex = sheetIndex - 1;
+    const sheetDesc = this.templateManager.SheetTemplate;
     const trackingRows: RowDataHelper[] = [];
 
+    let columnIndex = DEFAULT_COLUMN_INDEX;
     let beginTable = DEFAULT_BEGIN_TABLE;
     let endTable = DEFAULT_END_TABLE;
-    let columnIndex = DEFAULT_COLUMN_INDEX;
-
     for (let i = 1; !this.isStop && i <= sheet.rowCount; i++) {
       const row = sheet.getRow(i);
-      beginTable = ReaderExceljsHelper.beginTableAt(row, sheetDesc, this.isSampleExcel) ?? beginTable;
-      endTable = ReaderExceljsHelper.endTableAt(row, sheetDesc, this.isSampleExcel) ?? endTable;
+      this.templateManager.defineActualTableStartRow(ReaderExceljsHelper.beginTableAt(row, sheetDesc, this.isSampleExcel));
+      this.templateManager.defineActualTableStartRow(ReaderExceljsHelper.endTableAt(row, sheetDesc, this.isSampleExcel));
       columnIndex = ReaderExceljsHelper.columnTableIndex(row, sheetDesc, this.isSampleExcel) ?? columnIndex;
 
+      endTable = this.templateManager.ActualTableEndRow ?? DEFAULT_END_TABLE;
+      beginTable = this.templateManager.ActualTableStartRow ?? DEFAULT_BEGIN_TABLE;
+
       const section = ReaderExceljsHelper.getSection(row, beginTable, endTable);
+
       const cells: CellDataHelper[] = [];
       for (let j = 0; j < row.cellCount; j++) {
         if (!row.getCell(j + 1)?.value) continue;
@@ -127,7 +133,7 @@ export class ReaderExceljsHelper {
   }
 
   /** Get begin table at by row */
-  static beginTableAt(row: exceljs.Row, sheetOpts: SheetExcelOption, isSampleExcel: boolean = true) {
+  static beginTableAt(row: exceljs.Row, sheetOpts?: SheetExcelOption<CellImportOptions>, isSampleExcel: boolean = true) {
     if (isSampleExcel)
       for (let i = 0; i < row.cellCount; i++) {
         const cellValue = row.getCell(i + 1).value as unknown as string;
@@ -135,13 +141,13 @@ export class ReaderExceljsHelper {
         if (cellValue.includes(SYNTAX.INDEX_COLUMN_TABLE_SYNTAX)) return row.number;
         if (cellValue.includes(SYNTAX.VARIABLE_TABLE_SYNTAX)) return row.number - 1;
       }
-    else return sheetOpts.beginTableAt;
+    else if (sheetOpts) return sheetOpts.beginTableAt;
 
     return undefined;
   }
 
   /** Get end table at by row */
-  static endTableAt(row: exceljs.Row, sheetOpts: SheetExcelOption, isSampleExcel: boolean = true) {
+  static endTableAt(row: exceljs.Row, sheetOpts?: SheetExcelOption<CellImportOptions>, isSampleExcel: boolean = true) {
     if (isSampleExcel)
       for (let i = 0; i < row.cellCount; i++) {
         const cellValue = row.getCell(i + 1).value as unknown as string;
@@ -149,7 +155,7 @@ export class ReaderExceljsHelper {
         if (cellValue.includes(SYNTAX.END_TABLE_SYNYAX)) return row.number - 1;
         if (!cellValue.includes(SYNTAX.INDEX_COLUMN_TABLE_SYNTAX) && cellValue.includes(SYNTAX.VARIABLE_TABLE_SYNTAX)) return row.number;
       }
-    else {
+    else if (sheetOpts) {
       const cellvalues = (row?.values as any[]) ?? [];
       if (cellvalues && !cellvalues[sheetOpts.keyTableAt] && row.number > sheetOpts.beginTableAt) return row.number - 1;
     }
@@ -161,14 +167,14 @@ export class ReaderExceljsHelper {
   }
 
   /** Get key of table by row */
-  static columnTableIndex(row: exceljs.Row, sheetOpts: SheetExcelOption, isSampleExcel: boolean = true) {
+  static columnTableIndex(row: exceljs.Row, sheetOpts?: SheetExcelOption<CellImportOptions>, isSampleExcel: boolean = true) {
     if (isSampleExcel)
       for (let i = 0; i < row.cellCount; i++) {
         const cellValue = row.getCell(i + 1).value as unknown as string;
         if (cellValue === undefined || typeof cellValue !== "string") continue;
         if ((cellValue + "").includes(SYNTAX.INDEX_COLUMN_TABLE_SYNTAX)) return row.number + 1;
       }
-    else return sheetOpts.keyTableAt;
+    else if (sheetOpts) return sheetOpts.keyTableAt;
     return undefined;
   }
 

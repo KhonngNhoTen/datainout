@@ -1,16 +1,16 @@
-import { CellImportOptions, SheetImportOptions, TableImportOptions } from "../../common/types/import-template.type.js";
+import * as exceljs from "exceljs";
+import { ExcelTemplateManager } from "../../common/core/Template.js";
+import { SheetSection } from "../../common/types/common-type.js";
+import { CellImportOptions } from "../../common/types/import-template.type.js";
 import {
   FilterImportHandler,
-  ImporterHandlerFunction,
   ImporterHandlerInstance,
   ImporterLoadFunctionOpions,
   ImporterReaderType,
 } from "../../common/types/importer.type.js";
 import { BaseReaderOptions } from "../../common/types/reader.type.js";
 import { ConvertorRows2TableData } from "../../helpers/convert-row-to-table-data.js";
-import { getFileExtension } from "../../helpers/get-file-extension.js";
 import { TypeParser } from "../../helpers/parse-type.js";
-import { sortByAddress } from "../../helpers/sort-by-address.js";
 import { ImporterHandler } from "../ImporterHandler.js";
 
 export abstract class BaseReader {
@@ -18,17 +18,12 @@ export abstract class BaseReader {
 
   protected typeParser: TypeParser;
   protected handler: ImporterHandlerInstance = {} as any;
-  protected chunkSize: number = 20;
+  protected templateManager: ExcelTemplateManager<CellImportOptions> = {} as any;
   protected convertorRows2TableData: ConvertorRows2TableData = new ConvertorRows2TableData();
-  protected templates: SheetImportOptions[] = [];
-  protected groupCellDescs: { header: CellImportOptions[]; table: CellImportOptions[]; footer: CellImportOptions[] } = {
-    header: [],
-    table: [],
-    footer: [],
-  };
-  protected sheetIndex: number = 0;
-  protected additionalTemplate: CellImportOptions[][] = [];
-  protected importerOpts?: ImporterLoadFunctionOpions;
+
+  protected batches: { func: (...arg: any[]) => Promise<void>; params: any }[] = [];
+  protected options?: ImporterLoadFunctionOpions;
+  protected BATCH_MAX_SIZE = 2;
 
   constructor(opts: BaseReaderOptions) {
     this.type = opts.type;
@@ -37,34 +32,22 @@ export abstract class BaseReader {
 
   protected abstract load(arg: unknown): Promise<any>;
 
-  public async run(templates: SheetImportOptions[], arg: unknown, handler: ImporterHandlerInstance, opts?: any) {
-    this.sheetIndex = 0;
-    this.templates = templates;
-    this.templates[this.sheetIndex];
-    this.groupCellDescs = this.formatSheet(this.sheetIndex);
-    this.chunkSize = opts?.chunkSize ?? this.chunkSize;
+  public async run(
+    templateManager: ExcelTemplateManager<CellImportOptions>,
+    arg: unknown,
+    handler: ImporterHandlerInstance,
+    opts?: ImporterLoadFunctionOpions
+  ) {
+    this.options = opts;
     this.handler = handler;
-    this.importerOpts = opts;
+    this.templateManager = templateManager;
     await this.load(arg);
-  }
-
-  protected formatSheet(sheetIndex: number) {
-    const excel: any = this.templates[sheetIndex].cells.reduce((acc, cell) => {
-      if (!acc[cell.section]) acc[cell.section] = [cell];
-      else acc[cell.section]?.push(cell);
-      return acc;
-    }, {} as { header: CellImportOptions[]; table: CellImportOptions[]; footer: CellImportOptions[] });
-
-    const keys = Object.keys(excel);
-    for (let i = 0; i < keys.length; i++) excel[keys[i]] = sortByAddress(excel[keys[i]]);
-
-    return excel;
   }
 
   protected async callHandlers(data: any, filter: FilterImportHandler) {
     if (this.handler) {
       if (this.handler instanceof ImporterHandler) {
-        //return await this.handler.run(data, filter);
+        return await this.handler.run(data, filter);
       } else {
         for (let i = 0; i < this.handler.length; i++) {
           data = await this.handler[i](data, filter);
@@ -75,5 +58,13 @@ export abstract class BaseReader {
 
   public getType() {
     return this.type;
+  }
+
+  protected async depatchRow(func: (...arg: any[]) => Promise<void>, ...args: any[]) {
+    const sleepTime = 10;
+    this.batches.push({ func: func, params: args });
+    if (this.batches.length >= this.BATCH_MAX_SIZE) await Promise.all(this.batches.map((batch) => batch.func(...args)));
+    this.batches = [];
+    await new Promise((resolve) => setTimeout(resolve, sleepTime));
   }
 }
