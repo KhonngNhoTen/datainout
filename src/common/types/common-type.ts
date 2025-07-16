@@ -27,11 +27,15 @@ export type SheetExcelOption<T extends BaseAttribute> = {
 };
 
 export type EventType = {
+  onFile: () => void;
   finish: () => void;
   begin: (sheetName?: string) => void;
-  data: (value: any) => void;
+  data: () => void;
+  enddata: () => void;
   end: (sheetName?: string) => void;
 
+  header: (sheetName?: string) => void;
+  footer: (sheetName?: string) => void;
   /** Handle error. Return false to cancel import, otherhands return true */
   error: (error: Error) => boolean;
 };

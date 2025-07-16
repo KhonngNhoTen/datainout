@@ -1,7 +1,5 @@
 import { PaperSize, Style as CellStyle, Cell, Location } from "exceljs";
-import { BaseAttribute, SheetExcelOption, SheetSection } from "./common-type.js";
-import { ExporterOutputType, ExporterStreamOutputType } from "./exporter.type.js";
-import { ExcelTemplateManager } from "../core/Template.js";
+import { BaseAttribute, SheetExcelOption } from "./common-type.js";
 /** Excel report template */
 export type CellReportOptions = {
   address: string;

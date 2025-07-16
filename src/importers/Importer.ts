@@ -9,10 +9,13 @@ import { ExcelJsStreamReader } from "./readers/exceljs/ExcelJsStreamReader.js";
 import { IBaseStream } from "../common/core/ListEvents.js";
 import { CellImportOptions } from "../common/types/import-template.type.js";
 import { ExcelTemplateManager, IExcelTemplateManager } from "../common/core/Template.js";
+import { Piscina } from "piscina";
 
 export class Importer {
   protected templatePath: string;
   protected excelsTemplate: ExcelTemplateManager<CellImportOptions>;
+  protected workerPools?: Piscina;
+
   constructor(templatePath: string) {
     this.templatePath = pathImport(templatePath, "templateDir");
     this.templatePath = `${this.templatePath}${getConfig().templateExtension ?? ".js"}`;
@@ -36,8 +39,10 @@ export class Importer {
   createStream(arg: unknown, handler: ImporterHandlerInstance, type?: ImporterBaseReaderStreamType): Omit<IBaseStream, "onError"> {
     if (!type) type = "excel-stream";
     const fsStream = typeof arg === "string" ? fs.createReadStream(pathImport(arg, "excelSampleDir")) : arg;
+    //   if (opts?.workerSize) this.workerPools = createWorkerPool(opts?.workerSize);
+
     const readerStream = new ExcelJsStreamReader(this.excelsTemplate, fsStream as any, handler);
-    return readerStream as Omit<IBaseStream, "onError">;
+    return readerStream as unknown as Omit<IBaseStream, "onError">;
   }
 
   private createBaseReader(type: string) {

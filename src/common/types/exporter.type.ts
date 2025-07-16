@@ -11,6 +11,8 @@ export type ExporterOptions = {
   templateManager?: ExcelTemplateManager<CellReportOptions>;
   templatePath?: string;
   workerPool?: Piscina;
+  action: "write" | "buffer" | "stream";
+  reportPath?: string;
 } & Partial<ReportOptions>;
 
 export type ExporterStreamOptions = {

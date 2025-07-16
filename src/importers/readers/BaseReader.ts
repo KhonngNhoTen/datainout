@@ -59,12 +59,4 @@ export abstract class BaseReader {
   public getType() {
     return this.type;
   }
-
-  protected async depatchRow(func: (...arg: any[]) => Promise<void>, ...args: any[]) {
-    const sleepTime = 10;
-    this.batches.push({ func: func, params: args });
-    if (this.batches.length >= this.BATCH_MAX_SIZE) await Promise.all(this.batches.map((batch) => batch.func(...args)));
-    this.batches = [];
-    await new Promise((resolve) => setTimeout(resolve, sleepTime));
-  }
 }

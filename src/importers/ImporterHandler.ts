@@ -1,4 +1,3 @@
-import { TableData } from "../common/types/common-type.js";
 import { FilterImportHandler } from "../common/types/importer.type.js";
 
 export abstract class ImporterHandler<T> {
@@ -26,7 +25,6 @@ export abstract class ImporterHandler<T> {
   }
 
   protected async catch(error: Error): Promise<void> {}
-
   protected async handleChunk(chunk: T[], filter: FilterImportHandler): Promise<void> {}
   protected async handleRow(data: T, filter: FilterImportHandler): Promise<void> {}
   protected async handleHeader(header: any, filter: FilterImportHandler): Promise<void> {}

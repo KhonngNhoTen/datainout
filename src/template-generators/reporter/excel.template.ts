@@ -16,8 +16,9 @@ export class ExcelTemplateReport extends TemplateGenerator {
     name: "",
   };
   private currentSheet: SheetReportOptions = { cells: [], rowHeights: [] } as any;
+  private useStyle?: boolean = true;
 
-  constructor(template: string) {
+  constructor(template: string, useStyle: boolean = true) {
     super(template, pathReport);
     this.excelReaderHelper = new ReaderExceljsHelper({
       onSheet: async (data) => await this.onSheet(data),
@@ -26,6 +27,7 @@ export class ExcelTemplateReport extends TemplateGenerator {
       templateManager: new ExcelTemplateManager(),
       isSampleExcel: true,
     });
+    this.useStyle = useStyle;
   }
 
   private async onCell(cell: CellDataHelper) {
@@ -35,14 +37,16 @@ export class ExcelTemplateReport extends TemplateGenerator {
       const cellFormat: CellReportOptions = {
         address: cell.address,
         isVariable: cell.isVariable,
-        style: cell.detail.style,
         value: { fieldName: cell.variableValue?.fieldName, hardValue: cell.label },
         section: cell.section,
         fullAddress,
         formula: cell.formula,
         keyName: cell?.variableValue?.fieldName ?? cell.label ?? "",
         index: this.currentSheet.cells.length + 1,
-      };
+      } as any;
+      if (this.useStyle) {
+        cellFormat.style = cell.detail.style;
+      }
       this.currentSheet.cells.push(cellFormat);
     }
   }
@@ -54,13 +58,14 @@ export class ExcelTemplateReport extends TemplateGenerator {
 
   private async onSheet(sheet: SheetDataHelper) {
     const numberOfColumTable = this.currentSheet.cells.filter((e) => e.section === "table").length;
-    for (let i = 0; i < numberOfColumTable; i++) {
-      if (!this.currentSheet.columnWidths) this.currentSheet.columnWidths = [];
-      this.currentSheet.columnWidths.push(sheet.detail.getColumn(i + 1).width);
-    }
+    if (this.useStyle)
+      for (let i = 0; i < numberOfColumTable; i++) {
+        if (!this.currentSheet.columnWidths) this.currentSheet.columnWidths = [];
+        this.currentSheet.columnWidths.push(sheet.detail.getColumn(i + 1).width);
+      }
+    if (this.useStyle) this.currentSheet.merges = (sheet.detail as any)._merges;
     this.currentSheet.beginTableAt = sheet.beginTableAt;
     this.currentSheet.endTableAt = sheet.endTableAt;
-    this.currentSheet.merges = (sheet.detail as any)._merges;
     this.currentSheet.sheetIndex = sheet.sheetIndex;
     this.currentSheet.sheetName = sheet.name;
     this.currentSheet.keyTableAt = sheet.columnIndex;
