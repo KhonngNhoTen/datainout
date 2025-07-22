@@ -32,6 +32,7 @@ export class ExcelProcessor {
     this.event = opts.event;
     this.titlesTable = this.template.GroupCells.table.map((e) => e.value.fieldName ?? "");
     this.columnKeys = opts.style !== "no-style-no-header" ? undefined : this.createColumnKey();
+    console.log(this.style);
   }
 
   private createColumnKey() {
@@ -75,19 +76,13 @@ export class ExcelProcessor {
       this.finalizeWorksheet(sheetName);
       return;
     }
-    // console.time("count-data");
-    this.event.emitEvent("data");
-
     if (Array.isArray(batches)) {
       for (let i = 0; i < batches.length; i++) {
         if (this.style === "no-style-no-header") workSheet.addRow(batches[i]).commit();
-        else if (this.style === "no-style") this.addRow(batches[i], workSheet, this.template.GroupCells.table);
+        else if (this.style === "use-style") this.addRow(batches[i], workSheet, this.template.GroupCells.table);
         else this.addRowWithoutStyle(batches[i], workSheet);
       }
     } else if (batches !== null) this.addRow(batches, workSheet, this.template.GroupCells.table);
-    this.event.emitEvent("enddata");
-    // console.timeEnd("count-data");
-    // process.exit(1);
   }
 
   protected setFooter(footerData: any, sheetName: string): void;

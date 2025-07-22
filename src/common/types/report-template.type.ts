@@ -33,3 +33,18 @@ export type ReportStreamOptions = {
   workerSize?: number;
   sleepTime?: number;
 };
+
+export enum CellReportTypeEnum {
+  VARIABLE = "VARIABLE",
+  FORMULA = "FORMULA",
+  LABEL = "LABEL",
+}
+
+export type CellReportOptionsV2 = {
+  value: any;
+  typeCell: CellReportTypeEnum.VARIABLE;
+  style: Partial<CellStyle>;
+  formatValue?: (data: any) => any;
+  address: string;
+  fullAddress: Cell["fullAddress"];
+} & BaseAttribute;

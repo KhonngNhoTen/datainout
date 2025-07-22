@@ -127,18 +127,10 @@ export class ConvertorRows2TableData {
       section = arg.section;
     } else row = arg;
 
-    // let { beginTable, endTable } = this;
-    // const drafBeginTable = ReaderExceljsHelper.beginTableAt(row, template, false);
-    // const drafEndTable = ReaderExceljsHelper.endTableAt(row, template, false);
-
-    // if (beginTable === DEFAULT_BEGIN_TABLE && drafBeginTable) beginTable = drafBeginTable;
-    // if (endTable === DEFAULT_END_TABLE && drafEndTable) endTable = drafEndTable;
-
     const beginTable = this.templateManager.ActualTableStartRow ?? DEFAULT_BEGIN_TABLE;
     const endTable = this.templateManager.ActualTableEndRow ?? DEFAULT_END_TABLE;
     if (!arg.detail) section = ReaderExceljsHelper.getSection(row, beginTable, endTable);
-    // this.endTable = endTable;
-    // this.beginTable = beginTable;
+
     return { row, section, beginTable, endTable };
   }
 

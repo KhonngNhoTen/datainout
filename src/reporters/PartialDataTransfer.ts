@@ -11,6 +11,7 @@ export abstract class PartialDataTransfer {
   private callback: PartialDataCallback = async () => {};
   private delayMs: number = 10;
   private sheetStatuses: { [sheetname: string]: { status: boolean; jobStatuses: boolean[] } } = {};
+  private status: "completed" | "running" = "running";
 
   protected jobCount = 1;
 
@@ -23,6 +24,7 @@ export abstract class PartialDataTransfer {
   private async runJob(jobIndex: number, originalSheetName: string, callback: PartialDataCallback) {
     this.callback = callback;
     let isLoop = true;
+    let count = 1;
     while (isLoop) {
       let sheetName = originalSheetName;
       const { items, hasNext } = await this.fetchBatch(jobIndex);
@@ -62,15 +64,17 @@ export abstract class PartialDataTransfer {
   async run(sheetName: string, callback: PartialDataCallback) {
     const promises: any[] = [];
     const that = this;
-    if (this.jobCount > 1) {
-      for (let i = 0; i < this.jobCount; i++) promises.push(that.runJob(i, sheetName, callback));
-      await Promise.all(promises);
-    } else await this.runJob(0, sheetName, callback);
+
+    for (let i = 0; i < this.jobCount; i++) promises.push(that.runJob(i, sheetName, callback));
+    await Promise.all(promises);
   }
 
   protected bindJob2Sheet(jobIndex: number, originalSheetName: string): null | string {
     return null;
   }
+
+  async awake() {}
+  async completed() {}
 
   abstract fetchBatch(jobIndex: number): Promise<{ items: any[] | null; hasNext: boolean }>;
 }

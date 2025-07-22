@@ -9,6 +9,7 @@ export interface IEventImporterRegister {
   onError(func: EventType["error"]): this;
   onHeader(func: EventType["header"]): this;
   onFooter(func: EventType["footer"]): this;
+  onStart(func: EventType["start"]): this;
 }
 
 export interface IBaseStream extends IEventImporterRegister {
@@ -21,6 +22,11 @@ export class EventRegister implements IEventImporterRegister {
 
   on<EventKey extends keyof EventType>(key: EventKey, func: EventType[EventKey]): this {
     this.listEvents[key] = func;
+    return this;
+  }
+
+  onStart(func: EventType["start"]): this {
+    this.listEvents.start = func;
     return this;
   }
 

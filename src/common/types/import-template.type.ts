@@ -1,4 +1,4 @@
-import { AttributeType, BaseAttribute, SheetExcelOption, SheetSection } from "./common-type.js";
+import { AttributeType, BaseAttribute, SheetExcelOption, SheetExcelOptionV2, SheetSection } from "./common-type.js";
 
 export type BaseAttributeImporter = {
   type: AttributeType;

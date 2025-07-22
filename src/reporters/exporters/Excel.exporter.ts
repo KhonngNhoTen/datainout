@@ -5,10 +5,11 @@ import { EventRegister } from "../../common/core/ListEvents.js";
 import { ExcelTemplateManager } from "../../common/core/Template.js";
 import { TableData } from "../../common/types/common-type.js";
 import { CellReportOptions } from "../../common/types/report-template.type.js";
-import { PartialDataTransfer } from "../PartialDataTransfer.js";
+import { PartialDataTransfer, PartialDataTransferRunner } from "../PartialDataTransferV2.js";
 import { IExporter } from "./IExporter.js";
 import { ExcelProcessor, ExcelStreamProcessor } from "./proccessor/ExcelProcessor.js";
-import { PromiseBag } from "../../common/core/PromiseBag.js";
+import { RingPromise } from "../../common/core/RingPromise.js";
+import { PartialDataHandler } from "../IPartialDataHandler.js";
 
 type ExcelExporterOptions = {
   useSharedStrings?: boolean;
@@ -27,6 +28,7 @@ export class ExcelExporter implements IExporter {
   private template: ExcelTemplateManager<CellReportOptions> = {} as any;
   private event: EventRegister = new EventRegister();
   private opts: { style: "no-style" | "no-style-no-header" | "use-style" } = { style: "use-style" };
+  private excelProcessor: ExcelProcessor = {} as any;
 
   constructor(templatePath: string) {
     this.templatePath = templatePath;
@@ -45,25 +47,24 @@ export class ExcelExporter implements IExporter {
   async write(reportPath: string, data: TableData, opts?: ExcelExporterOptions): Promise<void>;
   async write(reportPath: string, data: TableDataPartialDataTransfer, opts?: ExcelExporterOptions): Promise<void>;
   async write(reportPath: string, data: TableData | TableDataPartialDataTransfer, opts?: ExcelExporterOptions): Promise<void> {
-    this.Event.emitEvent("onFile");
     const workBook = new exceljs.Workbook();
-    await this.execute(workBook, data);
+    this.Event.emitEvent("onFile");
+    // await this.execute(workBook, data);
     await workBook.xlsx.writeFile(reportPath);
   }
 
   async toBuffer(data: TableData, opts?: ExcelExporterOptions): Promise<Buffer>;
   async toBuffer(data: TableDataPartialDataTransfer, opts?: ExcelExporterOptions): Promise<Buffer>;
   async toBuffer(data: TableData | TableDataPartialDataTransfer, opts?: ExcelExporterOptions): Promise<Buffer> {
-    this.Event.emitEvent("onFile");
     const workBook = new exceljs.Workbook();
-    await this.execute(workBook, data);
+    this.Event.emitEvent("onFile");
+
     return (await workBook.xlsx.writeBuffer()) as unknown as Buffer;
   }
 
   streamTo(filePath: string, data: TableDataPartialDataTransfer, opts?: ExcelExporterOptions): void;
   streamTo(stream: Writable, data: TableDataPartialDataTransfer, opts?: ExcelExporterOptions): void;
   streamTo(arg1: unknown, data: TableDataPartialDataTransfer, opts?: ExcelExporterOptions): void {
-    this.Event.emitEvent("onFile");
     this.opts = { style: opts?.style ?? "use-style" };
     const stream = arg1 instanceof Writable ? arg1 : fs.createWriteStream(arg1 as string);
 
@@ -73,16 +74,17 @@ export class ExcelExporter implements IExporter {
       useStyles: opts?.style === "use-style" ? true : false,
       zip: opts?.zip,
     });
+    this.Event.emitEvent("onFile");
 
     this.execute(workBook, data, ExcelStreamProcessor);
   }
 
   private async execute(
     workBook: exceljs.Workbook,
-    data: TableData | TableDataPartialDataTransfer,
+    data: TableDataPartialDataTransfer,
     classProcessor: typeof ExcelStreamProcessor | typeof ExcelProcessor = ExcelProcessor
   ): Promise<void> {
-    const excelProcessor = new classProcessor({
+    this.excelProcessor = new classProcessor({
       workBook,
       template: this.Template,
       event: this.event,
@@ -91,25 +93,21 @@ export class ExcelExporter implements IExporter {
       style: this.opts.style,
     });
     const originalSheetName = this.Template.SheetInformation.sheetName;
+    const tableData = data.table as unknown as PartialDataTransferRunner;
 
-    if (!(data.table instanceof PartialDataTransfer)) {
-      const tableData = (data as TableData).table;
-      for (let i = 0; tableData && i < tableData.length; i++) {
-        excelProcessor.pushData(originalSheetName, tableData);
-      }
-    } else {
-      const tableData = data.table as PartialDataTransfer;
-      await tableData.run(originalSheetName, async (args) => {
-        excelProcessor.pushData(args.sheetName, args.items, args.sheetStatus === "completed");
-        if (excelProcessor instanceof ExcelStreamProcessor && args.status === "completed") await excelProcessor.finalizeWorkbook();
-      });
-    }
+    const partialDataHandler = new PartialDataHandler(originalSheetName, this.createTask());
+
+    await tableData.init(partialDataHandler, originalSheetName);
+    this.Event.emitEvent("start");
+    await tableData.start();
   }
 
-  // private createPromise(callBack: (...args: any[]) => {}, args: any): Promise<void> {
-  //   return new Promise((res, rej) => {
-  //     callBack(args.sheetName, args.items, args.sheetStatus === "completed");
-  //     res();
-  //   });
-  // }
+  private createTask() {
+    return async (args: any) => {
+      this.excelProcessor.pushData(args.sheetName, args.items, args.items !== null);
+      if (this.excelProcessor instanceof ExcelStreamProcessor && args.items !== null) {
+        await this.excelProcessor.finalizeWorkbook();
+      }
+    };
+  }
 }

@@ -28,6 +28,7 @@ export type SheetExcelOption<T extends BaseAttribute> = {
 
 export type EventType = {
   onFile: () => void;
+  start: () => void;
   finish: () => void;
   begin: (sheetName?: string) => void;
   data: () => void;
@@ -43,4 +44,19 @@ export type EventType = {
 export type TableExcelOptions<T> = {
   sheets: T[];
   name: string;
+};
+
+export type Task<T> = (args: T) => Promise<void>;
+
+export type SheetExcelOptionV2<T extends BaseAttribute> = {
+  cells: {
+    header?: T[];
+    footer?: T[];
+    table?: T[];
+  };
+  sheetIndex: number;
+  sheetName: string;
+  beginTableAt: number;
+  endTableAt?: number;
+  keyTableAt: number;
 };

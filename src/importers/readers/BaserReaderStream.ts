@@ -18,6 +18,9 @@ export abstract class BaseReaderStream extends BaseReader implements IBaseStream
     this.handler = handler;
     this.readable = readable;
   }
+  onStart(func: EventType["start"]): this {
+    throw new Error("Method not implemented.");
+  }
   endData(func: EventType["enddata"]): this {
     throw new Error("Method not implemented.");
   }

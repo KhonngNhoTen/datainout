@@ -33,11 +33,6 @@ export class ExcelJsReader extends BaseReader {
   private async onRow(row: RowDataHelper) {
     const sheet = this.templateManager.SheetTemplate;
     await this.handleRow({ id: sheet.sheetIndex + 1, name: sheet.sheetName } as any, row.detail);
-    // await this.depatchRow(
-    //   async (workSheet, row) => await this.handleRow(workSheet, row),
-    //   { id: sheet.sheetIndex + 1, name: sheet.sheetName },
-    //   row.detail
-    // );
   }
 
   private async onSheet(sheet: SheetDataHelper) {
