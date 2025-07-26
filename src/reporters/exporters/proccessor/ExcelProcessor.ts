@@ -32,7 +32,6 @@ export class ExcelProcessor {
     this.event = opts.event;
     this.titlesTable = this.template.GroupCells.table.map((e) => e.value.fieldName ?? "");
     this.columnKeys = opts.style !== "no-style-no-header" ? undefined : this.createColumnKey();
-    console.log(this.style);
   }
 
   private createColumnKey() {
@@ -188,16 +187,8 @@ export class ExcelStreamProcessor extends ExcelProcessor {
   }
 
   protected override addRow(data: any, workSheet: exceljs.Worksheet, cellDesc: CellReportOptions[]): exceljs.Row {
-    // console.time("addRow");
     const row = super.addRow(data, workSheet, cellDesc);
-    // console.timeEnd("addRow");
-    // console.time("commit-row");
-
-    if (this.style !== "use-style") {
-      row.commit();
-    }
-    // console.timeEnd("commit-row");
-
+    if (this.style !== "use-style") row.commit();
     return row;
   }
 

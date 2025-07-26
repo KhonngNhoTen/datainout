@@ -9,7 +9,7 @@ import { PartialDataTransfer, PartialDataTransferRunner } from "../PartialDataTr
 import { IExporter } from "./IExporter.js";
 import { ExcelProcessor, ExcelStreamProcessor } from "./proccessor/ExcelProcessor.js";
 import { RingPromise } from "../../common/core/RingPromise.js";
-import { PartialDataHandler } from "../IPartialDataHandler.js";
+import { DataTranfer, PartialDataHandler } from "../IPartialDataHandler.js";
 
 type ExcelExporterOptions = {
   useSharedStrings?: boolean;
@@ -103,9 +103,9 @@ export class ExcelExporter implements IExporter {
   }
 
   private createTask() {
-    return async (args: any) => {
-      this.excelProcessor.pushData(args.sheetName, args.items, args.items !== null);
-      if (this.excelProcessor instanceof ExcelStreamProcessor && args.items !== null) {
+    return async (args: DataTranfer) => {
+      this.excelProcessor.pushData(args.sheetName ?? "", args.items, args.sheetCompleted);
+      if (this.excelProcessor instanceof ExcelStreamProcessor && args.isCompleted) {
         await this.excelProcessor.finalizeWorkbook();
       }
     };

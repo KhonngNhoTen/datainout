@@ -1,6 +1,6 @@
 export interface ISheetMeta {
   get IsCompleted(): boolean;
-  updateRowCount(rowCount?: number): void;
+  updateRowCount(isCompleted: boolean, rowCount?: number): void;
   completeJob(index: number): void;
   getSheetName(index?: number): string;
   getSheetStatus(name: string): boolean;
@@ -40,8 +40,8 @@ export class SheetMeta {
       this.byJobIndex = false;
       this.sheetMetas[name] = {
         isCompleted: false,
-        rowCount: data,
-        maxRow: 0,
+        rowCount: 0,
+        maxRow: data,
       };
     } else if (Array.isArray(data)) {
       this.byJobIndex = true;
@@ -52,6 +52,9 @@ export class SheetMeta {
         maxRow: 0,
       };
       this.jobCount += data.length;
+      data.forEach((e) => {
+        this.mapSheetByJobIndex[e] = name;
+      });
     }
     this.sheetNames.push(name);
     return this;
@@ -71,20 +74,23 @@ export class SheetMeta {
     return this.isCompleted;
   }
 
-  private updateRowCount(rowCount?: number) {
+  private updateRowCount(isCompleted: boolean, rowCount: number) {
     const name = this.sheetNames[this.currentSheetName];
     const sheetMeta = this.sheetMetas[name];
-    if (!rowCount) {
-      this.sheetMetas[name].isCompleted = true;
-      this.isCompleted = true;
-    } else {
+    // if (!rowCount) {
+    //   this.sheetMetas[name].isCompleted = true;
+    //   this.isCompleted = true;
+    // } else {
+    if (isCompleted) sheetMeta.isCompleted = isCompleted;
+    else if (!this.byJobIndex) {
       this.rowCount += rowCount;
-      if (sheetMeta.rowCount < sheetMeta.rowCount) {
+      if ((sheetMeta.maxRow ?? 0) < sheetMeta.rowCount) {
         this.currentSheetName++;
         sheetMeta.isCompleted = true;
       }
       sheetMeta.rowCount += rowCount;
     }
+    // }
   }
 
   private getSheetName(index?: number) {
