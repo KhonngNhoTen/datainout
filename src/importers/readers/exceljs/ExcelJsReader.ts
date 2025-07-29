@@ -25,7 +25,6 @@ export class ExcelJsReader extends BaseReader {
       isSampleExcel: false,
       templateManager: this.templateManager,
     });
-
     const buffer = Buffer.isBuffer(arg) ? arg : Buffer.from(arg as string);
     await this.excelReaderHelper.load(buffer);
   }
@@ -81,7 +80,10 @@ export class ExcelJsReader extends BaseReader {
 
   private async handleError(errors: Error[]) {
     if (errors.length === 0) return;
-    if (this.options?.ignoreErrors === true) throw errors[0];
+    if (this.options?.ignoreErrors === true) {
+      this.isStopConsumeData = true;
+      throw errors[0];
+    }
 
     for (let i = 0; i < errors.length; i++) {
       await this.callHandlers(errors[i], null as any);

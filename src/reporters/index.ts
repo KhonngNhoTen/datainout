@@ -1,3 +1,3 @@
 export { Reporter } from "./Reporter.js";
-export { PartialDataTransfer } from "./PartialDataTransferV2.js";
+export { PartialDataTransfer } from "./PartialDataTransfer.js";
 export { SheetMeta } from "./SheetMeta.js";

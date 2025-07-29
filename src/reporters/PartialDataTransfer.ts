@@ -1,80 +1,97 @@
-type ParamsPartialDataCallback = {
-  items: any[] | null;
-  hasNext: boolean;
-  sheetName: string;
-  jobIndex: number;
-  sheetStatus: "completed" | "running";
-  status: "completed" | "running";
-};
-type PartialDataCallback = (params: ParamsPartialDataCallback) => Promise<any>;
+import { Readable } from "stream";
+import { PartialDataHandler } from "./IPartialDataHandler.js";
+import { SheetMeta, SheetMetaOptions } from "./SheetMeta.js";
+import { QueueData } from "../common/core/QueueData.js";
+
+export interface PartialDataTransferRunner {
+  start(): Promise<void>;
+  completed(): Promise<void>;
+  init(partialDataHandler: PartialDataHandler, sheetName: string): Promise<void>;
+}
 export abstract class PartialDataTransfer {
-  private callback: PartialDataCallback = async () => {};
-  private delayMs: number = 10;
-  private sheetStatuses: { [sheetname: string]: { status: boolean; jobStatuses: boolean[] } } = {};
-  private status: "completed" | "running" = "running";
+  private delayMs: number = 5;
+  private isStream: boolean = false;
+  private partialDataHandler: PartialDataHandler = {} as any;
+  private jobCount: number = 1;
+  private queueData: QueueData<{ items: any[] | null; jobIndex: number }> = new QueueData(100);
+  private isStopConsumeData: boolean = false;
 
-  protected jobCount = 1;
-
-  constructor(jobCount?: number, delayMs?: number) {
-    this.delayMs = delayMs ?? 10;
-    if (jobCount && jobCount < 0) throw new Error("jobCount must be greater than 0");
-    this.jobCount = jobCount ?? 1;
+  constructor(opts?: { isStream?: boolean; delayMs?: number; jobCount?: number }) {
+    this.delayMs = opts?.delayMs ?? 1;
+    this.isStream = opts?.isStream ?? false;
+    this.jobCount = opts?.jobCount ?? 1;
   }
 
-  private async runJob(jobIndex: number, originalSheetName: string, callback: PartialDataCallback) {
-    this.callback = callback;
-    let isLoop = true;
-    let count = 1;
-    while (isLoop) {
-      let sheetName = originalSheetName;
-      const { items, hasNext } = await this.fetchBatch(jobIndex);
-      if (this.jobCount > 1) sheetName = this.bindJob2Sheet(jobIndex, originalSheetName) ?? originalSheetName;
+  private async init(partialDataHandler: PartialDataHandler, originalSheetName: string) {
+    const sheetMetaOptions = this.configSheetMeta(originalSheetName);
+    this.partialDataHandler = partialDataHandler;
+    this.partialDataHandler.done = async () => await this.completed();
+    if (sheetMetaOptions) this.partialDataHandler.SheetMeta = new SheetMeta(sheetMetaOptions) as any;
+    await this.awake();
+  }
 
-      if (!this.sheetStatuses[sheetName]) this.sheetStatuses[sheetName] = { jobStatuses: [], status: false };
-      this.sheetStatuses[sheetName].jobStatuses[jobIndex] = !hasNext;
-      this.sheetStatuses[sheetName].status = this.isSheetStatus(sheetName);
+  private async start() {
+    if (this.isStream) await this.startStream();
+    else await Promise.all([this.startJobs(), this.consumeData()]);
+    // else await this.startJobs();
+  }
 
-      await this.callback({
-        items,
-        hasNext,
-        sheetName,
-        jobIndex,
-        sheetStatus: this.sheetStatuses[sheetName].status ? "completed" : "running",
-        status: this.isStatus(),
-      });
+  /** Run with stream */
+  private async startStream() {
+    const readable = this.createStream();
+    if (readable === null) throw new Error("You must implement 'createStream' method when using isStream = true");
+    const wriable = this.partialDataHandler.stream();
+    readable.pipe(wriable);
+  }
 
-      await new Promise((resolve) => setTimeout(resolve, this.delayMs));
-      isLoop = hasNext;
+  private async consumeData() {
+    while (true && !this.isStopConsumeData) {
+      const data = this.queueData.shift();
+      if (data) {
+        const isCompleted = await this.partialDataHandler.do(data);
+        if (isCompleted) break;
+      } else {
+        await new Promise((r) => setTimeout(r, 2));
+      }
     }
   }
 
-  private isStatus() {
-    const sheetNames = Object.keys(this.sheetStatuses);
-    for (let i = 0; i < sheetNames.length; i++) {
-      if (this.sheetStatuses[sheetNames[i]].status === false) return "running";
-    }
-    return "completed";
-  }
-
-  /** True is completed , False is running */
-  private isSheetStatus(sheetName: string) {
-    return !this.sheetStatuses[sheetName].jobStatuses.includes(false);
-  }
-
-  async run(sheetName: string, callback: PartialDataCallback) {
-    const promises: any[] = [];
+  /** Run with one or multiples job */
+  private async startJobs() {
+    const promises = [];
     const that = this;
+    for (let i = 0; i < this.jobCount; i++) {
+      promises.push(that.createJob(i));
+    }
 
-    for (let i = 0; i < this.jobCount; i++) promises.push(that.runJob(i, sheetName, callback));
     await Promise.all(promises);
   }
 
-  protected bindJob2Sheet(jobIndex: number, originalSheetName: string): null | string {
-    return null;
+  private async createJob(i: number) {
+    let isLoop = true;
+    while (isLoop) {
+      const { hasNext, items } = await this.fetchBatch(i);
+      await this.queueData.waiting();
+      this.queueData.add({ items, jobIndex: i });
+      // await this.partialDataHandler.do({ items, jobIndex: i });
+      isLoop = hasNext;
+      await new Promise((resolve) => setTimeout(resolve, this.delayMs));
+    }
   }
 
+  protected configSheetMeta(originalSheetName: string): SheetMetaOptions[] {
+    return undefined as any;
+  }
   async awake() {}
   async completed() {}
 
-  abstract fetchBatch(jobIndex: number): Promise<{ items: any[] | null; hasNext: boolean }>;
+  /** Batching data */
+  protected async fetchBatch(jobIndex: number): Promise<{ items: any[] | null; hasNext: boolean }> {
+    return { items: null, hasNext: false };
+  }
+
+  /** Run with streaming data */
+  protected createStream(): Readable {
+    return null as any;
+  }
 }

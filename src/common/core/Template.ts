@@ -132,7 +132,6 @@ export class ExcelTemplateManager<T extends BaseAttribute> implements IExcelTemp
       else acc[cell.section]?.push(cell);
       return acc;
     }, {} as typeof defaultGroup);
-
     const keys = Object.keys(excel);
     for (let i = 0; i < keys.length; i++) excel[keys[i]] = sortByAddress(excel[keys[i]]);
 

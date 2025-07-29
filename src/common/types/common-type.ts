@@ -52,7 +52,7 @@ export type SheetExcelOptionV2<T extends BaseAttribute> = {
   cells: {
     header?: T[];
     footer?: T[];
-    table?: T[];
+    table: T[];
   };
   sheetIndex: number;
   sheetName: string;

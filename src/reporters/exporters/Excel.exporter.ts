@@ -5,7 +5,7 @@ import { EventRegister } from "../../common/core/ListEvents.js";
 import { ExcelTemplateManager } from "../../common/core/Template.js";
 import { TableData } from "../../common/types/common-type.js";
 import { CellReportOptions } from "../../common/types/report-template.type.js";
-import { PartialDataTransfer, PartialDataTransferRunner } from "../PartialDataTransferV2.js";
+import { PartialDataTransfer, PartialDataTransferRunner } from "../PartialDataTransfer.js";
 import { IExporter } from "./IExporter.js";
 import { ExcelProcessor, ExcelStreamProcessor } from "./proccessor/ExcelProcessor.js";
 import { RingPromise } from "../../common/core/RingPromise.js";
@@ -49,7 +49,7 @@ export class ExcelExporter implements IExporter {
   async write(reportPath: string, data: TableData | TableDataPartialDataTransfer, opts?: ExcelExporterOptions): Promise<void> {
     const workBook = new exceljs.Workbook();
     this.Event.emitEvent("onFile");
-    // await this.execute(workBook, data);
+    await this.execute(workBook, data);
     await workBook.xlsx.writeFile(reportPath);
   }
 
@@ -58,7 +58,7 @@ export class ExcelExporter implements IExporter {
   async toBuffer(data: TableData | TableDataPartialDataTransfer, opts?: ExcelExporterOptions): Promise<Buffer> {
     const workBook = new exceljs.Workbook();
     this.Event.emitEvent("onFile");
-
+    await this.execute(workBook, data);
     return (await workBook.xlsx.writeBuffer()) as unknown as Buffer;
   }
 
@@ -81,7 +81,7 @@ export class ExcelExporter implements IExporter {
 
   private async execute(
     workBook: exceljs.Workbook,
-    data: TableDataPartialDataTransfer,
+    data: TableDataPartialDataTransfer | TableData,
     classProcessor: typeof ExcelStreamProcessor | typeof ExcelProcessor = ExcelProcessor
   ): Promise<void> {
     this.excelProcessor = new classProcessor({
@@ -93,13 +93,18 @@ export class ExcelExporter implements IExporter {
       style: this.opts.style,
     });
     const originalSheetName = this.Template.SheetInformation.sheetName;
-    const tableData = data.table as unknown as PartialDataTransferRunner;
-
     const partialDataHandler = new PartialDataHandler(originalSheetName, this.createTask());
-
-    await tableData.init(partialDataHandler, originalSheetName);
     this.Event.emitEvent("start");
-    await tableData.start();
+
+    if (data.table instanceof PartialDataTransfer) {
+      const tableData = data.table as unknown as PartialDataTransferRunner;
+      await tableData.init(partialDataHandler, originalSheetName);
+      await tableData.start();
+    } else {
+      const table = data.table as any[];
+      for (let i = 0; i < table.length; i++) this.excelProcessor.pushData(originalSheetName, table[i], false);
+      this.excelProcessor.pushData(originalSheetName, null, true);
+    }
   }
 
   private createTask() {

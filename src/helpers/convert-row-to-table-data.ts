@@ -23,6 +23,7 @@ export class ConvertorRows2TableData {
   private beginTable: number = DEFAULT_BEGIN_TABLE;
   private endTable: number = DEFAULT_END_TABLE;
   private templateManager: ExcelTemplateManager<CellImportOptions>;
+  private tableCols: string[] = [];
 
   constructor(opts?: ConvertorRows2TableDataOpts) {
     this.chunkSize = opts?.chunkSize ?? 10;
@@ -33,6 +34,7 @@ export class ConvertorRows2TableData {
   push(row: RowDataHelper | null, template: SheetImportOptions): PushResultTableData;
   push(row: exceljs.Row | null, template: SheetImportOptions): PushResultTableData;
   push(arg: any, template: SheetImportOptions) {
+    if (this.tableCols.length === 0) this.tableCols = this.templateManager.GroupCells.table.map((e) => e.keyName);
     const addresses: any = {};
     // Map cell velue with cell description
     const groupValues: GroupValueRow = {};
@@ -51,11 +53,9 @@ export class ConvertorRows2TableData {
     for (let i = 0; i < row.cellCount; i++) {
       const cell = row.getCell(i + 1);
       if (cell?.value === undefined) continue;
-      const index = template.cells.findIndex((e) => this.compareByAddress(e, section, cell, row.number, endTable));
-      if (index === -1) continue;
-      const cellImport = template.cells[index];
-      groupValues[cellImport.keyName] = cell.value;
-      addresses[cellImport.keyName] = cell.address;
+      const keyName = this.tableCols[i];
+      groupValues[keyName] = cell.value;
+      addresses[keyName] = cell.address;
     }
 
     if (section === "table" && Object.keys(groupValues).length > 0) this.container.table?.push(groupValues);

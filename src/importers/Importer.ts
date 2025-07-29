@@ -5,7 +5,7 @@ import { getConfig } from "../helpers/datainout-config.js";
 import { ImporterBaseReaderStreamType, ImporterHandlerInstance, ImporterLoadFunctionOpions } from "../common/types/importer.type.js";
 import { ExcelJsReader } from "./readers/exceljs/ExcelJsReader.js";
 import { ExcelJsCsvReader } from "./readers/csv/ExceljsCsvReader.js";
-import { ExcelJsStreamReader } from "./readers/exceljs/ExcelJsStreamReader.js";
+import { ExcelJsStreamReader } from "./readers/exceljs/ExcelJsStreamReaderV2.js";
 import { IBaseStream } from "../common/core/ListEvents.js";
 import { CellImportOptions } from "../common/types/import-template.type.js";
 import { ExcelTemplateManager, IExcelTemplateManager } from "../common/core/Template.js";
@@ -20,6 +20,7 @@ export class Importer {
     this.templatePath = pathImport(templatePath, "templateDir");
     this.templatePath = `${this.templatePath}${getConfig().templateExtension ?? ".js"}`;
     this.excelsTemplate = new ExcelTemplateManager(this.templatePath);
+    this.excelsTemplate.SheetIndex = 0;
   }
 
   public get ExcelTemplate(): IExcelTemplateManager<CellImportOptions> {

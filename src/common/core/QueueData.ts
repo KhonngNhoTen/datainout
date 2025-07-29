@@ -1,5 +1,5 @@
 export class QueueData<T> {
-  private stack: T[] = [];
+  cells: T[] = [];
   private size: number;
   private resolveFunc: () => void = () => {};
   private waitingFunc: Promise<void>;
@@ -16,21 +16,21 @@ export class QueueData<T> {
   }
 
   async waiting() {
-    if (this.stack.length < this.size) return;
+    if (this.cells.length < this.size) return;
     await this.waitingFunc;
   }
 
   shift(): T | undefined {
-    const data = this.stack.shift();
-    if (this.stack.length === this.size - 1) {
+    const data = this.cells.shift();
+    if (this.cells.length === this.size - 1) {
       this.resolveFunc();
     }
     return data;
   }
 
   add(data: T) {
-    this.stack.push(data);
-    if (this.stack.length === this.size) {
+    this.cells.push(data);
+    if (this.cells.length === this.size) {
       this.waitingFunc = this.createWaiter();
     }
   }

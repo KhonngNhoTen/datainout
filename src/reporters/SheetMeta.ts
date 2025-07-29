@@ -1,5 +1,6 @@
 export interface ISheetMeta {
   get IsCompleted(): boolean;
+  get RowCount(): number;
   updateRowCount(isCompleted: boolean, rowCount?: number): void;
   completeJob(index: number): void;
   getSheetName(index?: number): string;
@@ -72,6 +73,10 @@ export class SheetMeta {
 
   public get IsCompleted(): boolean {
     return this.isCompleted;
+  }
+
+  public get RowCount(): number {
+    return this.rowCount;
   }
 
   private updateRowCount(isCompleted: boolean, rowCount: number) {

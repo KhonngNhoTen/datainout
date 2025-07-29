@@ -42,9 +42,8 @@ export enum CellReportTypeEnum {
 
 export type CellReportOptionsV2 = {
   value: any;
-  typeCell: CellReportTypeEnum.VARIABLE;
+  typeCell: CellReportTypeEnum;
   style: Partial<CellStyle>;
-  formatValue?: (data: any) => any;
   address: string;
   fullAddress: Cell["fullAddress"];
 } & BaseAttribute;

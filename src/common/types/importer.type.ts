@@ -23,5 +23,5 @@ export type ImporterLoadFunctionOpions = {
   type?: ImporterBaseReaderType;
   chunkSize?: number;
   ignoreErrors?: boolean;
-  workerSize?: number;
+  jobCount?: number;
 };

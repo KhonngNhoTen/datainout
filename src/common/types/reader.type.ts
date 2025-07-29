@@ -7,6 +7,7 @@ export type BaseReaderOptions = {
   type: ImporterReaderType;
   chunkSize?: number;
   typeParser?: TypeParser;
+  jobCount?: number;
 };
 
 export type ReaderFactoryItem = {
