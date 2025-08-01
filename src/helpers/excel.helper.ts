@@ -25,12 +25,12 @@ export class ReaderExceljsHelper {
 
   isStop: boolean = false;
 
-  constructor(opts?: ExcelReaderHelperOptions) {
+  constructor(opts: ExcelReaderHelperOptions) {
     this.onCell = opts?.onCell;
     this.onRow = opts?.onRow;
     this.onSheet = opts?.onSheet;
     this.isSampleExcel = opts?.isSampleExcel ?? true;
-    this.templateManager = opts?.templateManager ?? new ExcelTemplateManager();
+    this.templateManager = opts.templateManager;
   }
 
   async load(file: string): Promise<any>;
@@ -122,12 +122,15 @@ export class ReaderExceljsHelper {
     };
   }
 
-  static getSection(row: exceljs.Row, beginTable: number, endTable: number): SheetSection {
+  static getSection(row: exceljs.Row, beginTable: number, endTable: number): SheetSection;
+  static getSection(rowIndex: number, beginTable: number, endTable: number): SheetSection;
+  static getSection(row: unknown, beginTable: number, endTable: number): SheetSection {
+    const rowIndex = typeof row === "number" ? row : (row as exceljs.Row).number;
     let section: SheetSection = "header";
     if (beginTable === DEFAULT_BEGIN_TABLE) section = "header";
-    else if (beginTable !== DEFAULT_BEGIN_TABLE && row.number < beginTable) section = "header";
-    else if (row.number > endTable && endTable !== DEFAULT_END_TABLE) section = "footer";
-    else if (row.number > beginTable) section = "table";
+    else if (beginTable !== DEFAULT_BEGIN_TABLE && rowIndex < beginTable) section = "header";
+    else if (rowIndex > endTable && endTable !== DEFAULT_END_TABLE) section = "footer";
+    else if (rowIndex > beginTable) section = "table";
 
     return section;
   }

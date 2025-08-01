@@ -6,7 +6,7 @@ export abstract class ImporterHandler<T> {
     this.eachRow = eachRow;
   }
 
-  async run(tabledata: any, filterImporter: FilterImportHandler) {
+  async run(tabledata: any, filterImporter: FilterImportHandler, setGlobalError: (err: Error) => void = (err) => {}) {
     try {
       if (tabledata instanceof Error) await this.catch(tabledata);
       else if (tabledata.header) await this.handleHeader(tabledata.header, filterImporter);
@@ -16,11 +16,13 @@ export abstract class ImporterHandler<T> {
         for (let i = 0; i < tabledata.table.length; i++)
           try {
             await this.handleRow(tabledata.table[i], filterImporter);
-          } catch (error) {
-            await this.catch(error as any);
+          } catch (error: any) {
+            await this.catch(error);
+            setGlobalError(error);
           }
-    } catch (e) {
+    } catch (e: any) {
       await this.catch(e as any);
+      setGlobalError(e);
     }
   }
 

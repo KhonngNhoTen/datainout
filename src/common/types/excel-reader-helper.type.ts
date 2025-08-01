@@ -44,5 +44,5 @@ export type ExcelReaderHelperOptions = {
   onCell?: (cell: CellDataHelper) => Promise<any>;
   isSampleExcel?: boolean;
   template?: SheetExcelOption<any>[];
-  templateManager?: ExcelTemplateManager<CellImportOptions>;
+  templateManager: ExcelTemplateManager<CellImportOptions>;
 };

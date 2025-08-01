@@ -8,7 +8,7 @@ export interface IPartialDataHandler {
   stream(): Writable;
 }
 
-type DataTranfer = {
+export type DataTranfer = {
   items: any[] | null;
   sheetCompleted: boolean;
   isCompleted: boolean;

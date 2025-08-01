@@ -1,7 +1,13 @@
 import { PaperSize, Style as CellStyle, Cell, Location } from "exceljs";
 import { AttributeType, SheetSection } from "./common-type.js";
 
-export type LayoutSheet<T> = {
+export type TableData<T> = {
+  header?: T;
+  footer?: T;
+  table: T[];
+};
+
+export type LayoutSheet<T extends BaseCellAttribute> = {
   cells: {
     header?: T[];
     footer?: T[];
@@ -19,6 +25,7 @@ export type BaseCellAttribute = {
   address?: string;
   key: string;
 };
+
 export type ImportCell = {
   type: AttributeType;
   required?: boolean;
@@ -44,3 +51,5 @@ export type LayoutExportSheet = {
   columnWidths?: (number | undefined)[];
   rowHeights?: Record<string, number>;
 } & LayoutSheet<ExportCell>;
+
+export type TableDataByLayout<T> = {};

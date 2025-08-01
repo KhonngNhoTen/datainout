@@ -47,8 +47,8 @@ export class Importer {
   }
 
   private createBaseReader(type: string) {
-    if (type === "excel") return new ExcelJsReader();
-    if (type === "csv") return new ExcelJsCsvReader();
+    if (type === "excel") return new ExcelJsReader(this.excelsTemplate);
+    if (type === "csv") return new ExcelJsCsvReader(this.excelsTemplate);
     throw new Error(`Type ${type} not supports`);
   }
 }

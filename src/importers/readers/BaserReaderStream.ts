@@ -13,7 +13,7 @@ export abstract class BaseReaderStream extends BaseReader implements IBaseStream
   protected handler: ImporterHandlerInstance;
 
   constructor(templateManager: ExcelTemplateManager<CellImportOptions>, readable: Readable, handler: ImporterHandlerInstance) {
-    super({ type: "excel-stream", typeParser: new TypeParser() });
+    super({ type: "excel-stream", typeParser: new TypeParser(), templateManager });
     this.templateManager = templateManager;
     this.handler = handler;
     this.readable = readable;
