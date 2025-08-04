@@ -81,7 +81,6 @@ export abstract class BaseReader {
 
   protected createTask() {
     return async (data: any | any[], filter: FilterImportHandler) => {
-      console.log("Processing data:", data);
       if (this.handler instanceof ImporterHandler) await this.handler.run(data, filter, this.setGlobalError);
       else
         for (let i = 0; i < this.handler.length; i++) {

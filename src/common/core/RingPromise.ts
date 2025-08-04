@@ -14,9 +14,7 @@ export class RingPromise {
 
   async run(...arg: any): Promise<void> {
     this.index = (this.index + 1) % this.ring.length;
-    this.ring[this.index] = this.task(...arg).catch((err) => {
-      console.error(`Task at index ${this.index} failed:`, err);
-    });
+    this.ring[this.index] = this.task(...arg);
     // await this.ring[this.index](...arg);
     // await this.ring[this.index];
 

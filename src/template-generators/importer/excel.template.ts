@@ -71,7 +71,7 @@ export default template`;
     console.log(`Create template import file: [${this.templatePath}]`);
 
     if (!(arg instanceof Buffer)) {
-      arg = pathImport(arg as string, "excelSampleDir");
+      arg = pathImport(arg as string, "layoutDir");
       arg = await fs.readFile(arg as string);
     }
 

@@ -2,8 +2,8 @@ type ImportConfigOptions = {
   /** Path of template files */
   templateDir?: string;
 
-  /** Path of excel file to convert to template */
-  excelSampleDir?: string;
+  /** Path of layout excel file to convert to template */
+  layoutDir?: string;
 };
 
 type ReportConfigOptions = {
@@ -13,8 +13,8 @@ type ReportConfigOptions = {
   /** Path of output file after generate report */
   reportDir?: string;
 
-  /** Path of excel file to convert to template */
-  excelSampleDir?: string;
+  /** Path of layout excel file to convert to template */
+  layoutDir?: string;
   //   expoterFactory?: ExporterFactory;
 };
 

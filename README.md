@@ -40,12 +40,12 @@ module.exports = {
   templateExtension: '.js',
   import: {
     templateDir: './templates/imports',
-    excelSampleDir: './excels',
+    layoutDir: './excels',
   },
   report: {
     templateDir: './templates/reports',
     reportDir: './exports',
-    excelSampleDir: './excels'
+    layoutDir: './excels'
   },
 };
 ```
@@ -58,12 +58,12 @@ const template : ExcelFormat = {
   templateExtension: '.ts',
   import: {
     templateDir: './templates/imports',
-    excelSampleDir: './excels',
+    layoutDir: './excels',
   },
   report: {
     templateDir: './templates/reports',
     reportDir: './exports',
-    excelSampleDir: './excels'
+    layoutDir: './excels'
   },
 };
 export default template;
@@ -74,7 +74,7 @@ In which:
 - `templateExtension`: the type of file used.
 - `templateDir`: the directory containing the generated template files (for import or report).
 - `reportDir`: the location where exported files (HTML, PDF, Excel, etc.) are stored.
-- `excelSampleDir`: the directory containing sample Excel files (template Excel files).
+- `layoutDir`: The folder where the layout Excel (template) files are stored.
 
 ### III. Excel file layout
 
@@ -84,7 +84,7 @@ In datainout, Excel files are defined based on a fixed layout. Each Excel sheet 
 - `Table`: The section that contains the main table data.
 - `Footer`: The rows that come after the table content until the end of the sheet.
 
-Symbols Used in the Sample Excel File (Excel Layout Definition File):
+Symbols Used in the Excel Layout Definition File:
 
 - `$`: Defines a variable in the header or footer section.
 - `$$`: Defines a variable in the table section.
@@ -127,7 +127,7 @@ If you have an Excel file as described, and the data you want to import includes
 - Created by
 - And the column "**name**" is always **required**.
 
-Then the sample file (layout definition file) would look like this:
+Then the layout file would look like this:
 
 |                  |                     |                    |
 | ---------------- | ------------------- | ------------------ |
@@ -147,7 +147,7 @@ Thus, the three layout sections of the above Excel file are:
 
 ### IV. Template generator
 
-To create an Excel template file for both import and report purposes, you need to prepare a sample Excel file that includes the header, footer, and table sections. Then, use **ExcelTemplateImport** (for import) or **ExcelTemplateReport** (for report) to generate the template file.
+To create an Excel template file for both import and report purposes, you need to prepare a layout file that includes the header, footer, and table sections. Then, use **ExcelTemplateImport** (for import) or **ExcelTemplateReport** (for report) to generate the template file.
 
 Below is the full code to generate the template:
 
@@ -173,7 +173,7 @@ async function createReportTemplate() {
 ```
 
 **Note:**
-In your config file, you should set the paths to the sample and template directories, so the paths used in code can be shorter and cleaner.
+In your config file, you should set the paths to the layout file and template directories, so the paths used in code can be shorter and cleaner.
 
 Or more simply, to generate a template file, you can use the following command:
 
@@ -185,9 +185,9 @@ npx datainout g [schema] -t [templateName] -s [sourceName]
 
 - **schema:** `report` or `import`
 - **templateName:** The name you want to give the generated template file (without extension).
-- **sourceName:** The name of the sample file (layout definition file) located in the excelSampleDir as defined in your config.
+- **sourceName:** The name of the layout file located in the layoutDir as defined in your config.
 
-This command will read the layout from the sample file and generate a corresponding template (for import or report) into the templateDir folder specified in your config file.
+This command will read the layout from the layout file and generate a corresponding template (for import or report) into the templateDir folder specified in your config file.
 
 Example:
 
@@ -332,6 +332,42 @@ Detailed information for the filter:
 - **section:** The section of the sheet currently being processed: `header`, `footer`, or `table`.
 - **isHasNext:** `boolean` – Indicates whether there is more data to process or if this is the final chunk.
 
+#### Class Importer:
+
+**Method load():**
+
+- arguments:
+
+| Key  | Required | Note                                                      |
+| ---- | -------- | --------------------------------------------------------- |
+| arg1 | true     | **string** or **Buffer**                                  |
+| arg2 | true     | **ImporterHandlerInstance**                               |
+| arg3 | false    | [ImporterLoadFunctionOpions](#importerloadfunctionopions) |
+
+- return: _void_
+
+</br>
+
+**Method createStream():**
+
+- arguments:
+
+| Key  | Required | Note                        |
+| ---- | -------- | --------------------------- |
+| arg1 | true     | **string** or **Readable**  |
+| arg2 | true     | **ImporterHandlerInstance** |
+
+- return: _IBaseStream_
+
+##### ImporterLoadFunctionOpions
+
+Details:
+
+- type: "excel" or "csv". The type of file to import.
+- chunkSize: Length of each chunk to import.
+- ignoreErrors: Whether to ignore errors during import.
+- jobCount: Number of concurrent jobs.
+
 ### VI. Report
 
 To generate an export file, you can proceed as follows:
@@ -342,10 +378,96 @@ const reportPath = 'report-path.xlsx';
 const users = [
   // List of user
 ];
-
-const reporter = new Reporter(templatePath);
-await reporter.write(
+const exporter = new Reporter(templatePath).createExporterEXCEL();
+await exporter.write(
   reportPath,
   { table: users }
 );
 ```
+
+#### Class Exporter:
+
+**Method write():** Write file by path.
+
+- arguments:
+
+| Key  | Required | Note                                                                                     |
+| ---- | -------- | ---------------------------------------------------------------------------------------- |
+| arg1 | true     | **string**                                                                               |
+| arg2 | true     | [TableData](#tabledata) or [TableDataPartialDataTransfer](#tabledatapartialdatatransfer) |
+| arg3 | false    | [ExcelExporterOptions](#excelexporteroptions)                                            |
+
+- return: _void_
+
+</br>
+
+**Method toBuffer():** create file, return buffers.
+
+- arguments:
+
+| Key  | Required | Note                                                                                     |
+| ---- | -------- | ---------------------------------------------------------------------------------------- |
+| arg1 | true     | [TableData](#tabledata) or [TableDataPartialDataTransfer](#tabledatapartialdatatransfer) |
+| arg2 | false    | [ExcelExporterOptions](#excelexporteroptions)                                            |
+
+- return: _Buffer_
+
+</br>
+
+**Method streamTo():** Create the file using a stream. Suitable for exporting Excel files with large data.
+
+- arguments:
+
+| Key  | Required | Note                                                          |
+| ---- | -------- | ------------------------------------------------------------- |
+| arg1 | true     | **string** or **Writable**                                    |
+| arg2 | true     | [TableDataPartialDataTransfer](#tabledatapartialdatatransfer) |
+| arg3 | false    | [ExcelExporterOptions](#excelexporteroptions)                 |
+
+- return: _void_
+
+##### TableData
+
+Details:
+
+- header: Data of header sheet.
+- footer: Data of footer sheet.
+- table: Array of items.
+
+##### TableDataPartialDataTransfer
+
+Details:
+
+- header: Data of header sheet.
+- footer: Data of footer sheet.
+- table: [PartialDataTransfer](#partialdatatransfer).
+
+##### ExcelExporterOptions
+
+Details:
+
+- useSharedStrings: boolean.
+- zip: Optional.
+- style: "no-style" or "no-style-no-header" or "use-style".
+
+#### PartialDataTransfer:
+
+An abstract class responsible for retrieving data and piping it into an export file.
+
+**Features:**
+
+| Key          | Required | Note                                                            |
+| ------------ | -------- | --------------------------------------------------------------- |
+| **isStream** | false    | Boolean – Whether to fetch data using a stream.                 |
+| **delayMs**  | false    | Number – Delay (in milliseconds) between each fetch.            |
+| **jobCount** | false    | Number – Number of concurrent data-fetching jobs. Default is 1. |
+
+**Methods:**
+
+| Name                | Arguments | Note                                                 |
+| ------------------- | --------- | ---------------------------------------------------- |
+| **awake**           | none      | Function called before starting data retrieval.      |
+| **completed**       | none      | Function called after completing data retrieval.     |
+| **configSheetMeta** | string    | Configure mapping between the sheet and the dataset. |
+| **fetchBatch**      | number    | Fetch a batch of data from the database.             |
+| **createStream**    | none      | Create a data stream for export.                     |

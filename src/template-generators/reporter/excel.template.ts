@@ -77,7 +77,7 @@ export class ExcelTemplateReport extends TemplateGenerator {
   generate(fileSample: string): Promise<any>;
   async generate(arg: unknown) {
     if (arg instanceof Buffer) await this.excelReaderHelper.load(arg);
-    else await this.excelReaderHelper.load(pathReport(arg + "", "excelSampleDir"));
+    else await this.excelReaderHelper.load(pathReport(arg + "", "layoutDir"));
     let contentFile = "";
     if (getConfig()?.templateExtension === ".js")
       contentFile = `/** @type {import("inoutjs").ExcelFormat} */
