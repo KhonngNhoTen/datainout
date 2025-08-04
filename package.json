@@ -1,10 +1,12 @@
 {
   "name": "datainout",
-  "version": "1.0.0",
-  "main": "./dist/index.js",
+  "version": "1.1.0-beta",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
   "types": "./dist/type.d.ts",
+  "type": "module",
   "scripts": {
-    "build": "rm -r ./dist & tsc",
+    "build": "rm -r ./dist && tsup",
     "publish": "npm run build && npm publish --access public",
     "format": "npx prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\""
   },
@@ -19,7 +21,9 @@
   "license": "ISC",
   "description": "Import and reports data",
   "devDependencies": {
+    "@microsoft/api-extractor": "^7.50.0",
     "ts-node": "^10.9.2",
+    "tsup": "^8.3.6",
     "typescript": "^5.7.3"
   },
   "dependencies": {
@@ -29,9 +33,40 @@
     "dayjs": "^1.11.13",
     "exceljs": "^4.4.0"
   },
+  "exports": {
+    "./importers": {
+      "import": {
+        "import": "./dist/importers/index.js",
+        "types": "./dist/importers/index.d.ts"
+      },
+      "require": {
+        "require": "./dist/importers/index.cjs",
+        "types": "./dist/importers/index.d.cts"
+      }
+    },
+    "./reporters": {
+      "import": {
+        "import": "./dist/reporters/index.js",
+        "types": "./dist/reporters/index.d.ts"
+      },
+      "require": {
+        "require": "./dist/reporters/index.cjs",
+        "types": "./dist/reporters/index.d.cts"
+      }
+    },
+    "./template-generators": {
+      "import": {
+        "import": "./dist/template-generators/index.js",
+        "types": "./dist/template-generators/index.d.ts"
+      },
+      "require": {
+        "require": "./dist/template-generators/index.cjs",
+        "types": "./dist/template-generators/index.d.cts"
+      }
+    }
+  },
   "bin": {
-    "import:convert": "./dist/bin/import-convert.script.js",
-    "report:template excel2excel": "./dist/bin/template-report/excel-generate.ts"
+    "datainout": "./dist/bin/cli.cjs"
   },
   "peerDependencies": {
     "ejs": "^3.1.10",
