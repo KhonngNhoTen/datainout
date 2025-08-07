@@ -21,7 +21,6 @@
   "license": "ISC",
   "description": "Import and reports data",
   "devDependencies": {
-    "@microsoft/api-extractor": "^7.50.0",
     "ts-node": "^10.9.2",
     "tsup": "^8.3.6",
     "typescript": "^5.7.3"
@@ -29,8 +28,6 @@
   "dependencies": {
     "@types/ejs": "^3.1.5",
     "commander": "^13.0.0",
-    "cron": "^3.5.0",
-    "dayjs": "^1.11.13",
     "exceljs": "^4.4.0"
   },
   "exports": {

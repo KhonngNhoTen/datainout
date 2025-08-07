@@ -2,7 +2,7 @@ import { EventRegister, IBaseStream } from "../../common/core/ListEvents.js";
 import { ExcelTemplateManager } from "../../common/core/Template.js";
 import { EventType } from "../../common/types/common-type.js";
 import { CellImportOptions, SheetImportOptions } from "../../common/types/import-template.type.js";
-import { ImporterHandlerInstance } from "../../common/types/importer.type.js";
+import { ImporterBaseReaderStreamType, ImporterHandlerInstance, ImporterLoadFunctionOpions } from "../../common/types/importer.type.js";
 import { TypeParser } from "../../helpers/parse-type.js";
 import { BaseReader } from "./BaseReader.js";
 import { Readable } from "stream";
@@ -12,11 +12,17 @@ export abstract class BaseReaderStream extends BaseReader implements IBaseStream
   protected readable: Readable;
   protected handler: ImporterHandlerInstance;
 
-  constructor(templateManager: ExcelTemplateManager<CellImportOptions>, readable: Readable, handler: ImporterHandlerInstance) {
-    super({ type: "excel-stream", typeParser: new TypeParser(), templateManager });
-    this.templateManager = templateManager;
-    this.handler = handler;
-    this.readable = readable;
+  constructor(data: {
+    templateManager: ExcelTemplateManager<CellImportOptions>;
+    readable: Readable;
+    handler: ImporterHandlerInstance;
+    options?: ImporterLoadFunctionOpions & { type?: ImporterBaseReaderStreamType };
+  }) {
+    super({ type: "excel-stream", typeParser: new TypeParser(), templateManager: data.templateManager });
+    this.templateManager = data.templateManager;
+    this.handler = data.handler;
+    this.readable = data.readable;
+    this.options = data.options;
   }
   onStart(func: EventType["start"]): this {
     throw new Error("Method not implemented.");
@@ -32,7 +38,7 @@ export abstract class BaseReaderStream extends BaseReader implements IBaseStream
   }
 
   start(): void {
-    (async () => await this.run(this.templateManager, this.readable, this.handler))();
+    (async () => await this.run(this.templateManager, this.readable, this.handler, this.options))();
   }
 
   on<EventKey extends keyof EventType>(key: EventKey, func: EventType[EventKey]): this {

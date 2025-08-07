@@ -1,14 +1,19 @@
 import * as exceljs from "exceljs";
 import { Readable } from "stream";
-import { ImporterHandlerInstance } from "../../../common/types/importer.type.js";
+import { ImporterBaseReaderStreamType, ImporterHandlerInstance, ImporterLoadFunctionOpions } from "../../../common/types/importer.type.js";
 import { BaseReaderStream } from "../BaserReaderStream.js";
 import { CellImportOptions } from "../../../common/types/import-template.type.js";
 import { ExcelTemplateManager } from "../../../common/core/Template.js";
 import { ReaderExceljsHelper } from "../../../helpers/excel.helper.js";
 
 export class ExcelJsStreamReader extends BaseReaderStream {
-  constructor(templateManager: ExcelTemplateManager<CellImportOptions>, readable: Readable, handlers: ImporterHandlerInstance) {
-    super(templateManager, readable, handlers);
+  constructor(data: {
+    templateManager: ExcelTemplateManager<CellImportOptions>;
+    readable: Readable;
+    handler: ImporterHandlerInstance;
+    options?: ImporterLoadFunctionOpions & { type?: ImporterBaseReaderStreamType };
+  }) {
+    super(data);
   }
 
   public async load(arg: Readable): Promise<any> {
@@ -25,6 +30,7 @@ export class ExcelJsStreamReader extends BaseReaderStream {
 
         this.templateManager.defineActualTableStartRow(ReaderExceljsHelper.beginTableAt(row, this.templateManager.SheetTemplate, false));
         this.templateManager.defineActualTableEndRow(ReaderExceljsHelper.endTableAt(row, this.templateManager.SheetTemplate, false));
+
         await this.convertorRows2TableData.push(row);
         this.listEvents.emitEvent("data");
       }
