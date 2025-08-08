@@ -1,6 +1,6 @@
 {
   "name": "datainout",
-  "version": "1.1.1-beta",
+  "version": "1.1.2-beta",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/type.d.ts",
