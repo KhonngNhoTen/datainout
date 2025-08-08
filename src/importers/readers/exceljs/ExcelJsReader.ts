@@ -37,48 +37,4 @@ export class ExcelJsReader extends BaseReader {
     const buffer = Buffer.isBuffer(arg) ? arg : Buffer.from(arg as string);
     await this.excelReaderHelper.load(buffer);
   }
-
-  override createTask() {
-    return async (section: SheetSection, data: any) => {
-      const filter: FilterImportHandler = {
-        section: section,
-        sheetIndex: this.templateManager.SheetInformation.sheetIndex ?? 0,
-        sheetName: this.templateManager.SheetInformation.sheetName,
-        isHasNext: data !== null,
-      };
-      let err;
-      data = data instanceof Error ? data : { [section]: data };
-      const setGlobalError = (e: any) => (err = e);
-
-      if (this.handler instanceof ImporterHandler) {
-        await this.handler.run(data, filter, setGlobalError);
-        if (err) throw err;
-      } else for (let i = 0; i < this.handler.length; i++) data = await this.handler[i](data, filter);
-    };
-  }
-
-  private async callHandler(section: SheetSection, data: any) {
-    await this.ringPromise.run(section, data);
-    // const filter: FilterImportHandler = {
-    //   section: section,
-    //   sheetIndex: this.templateManager.SheetInformation.sheetIndex ?? 0,
-    //   sheetName: this.templateManager.SheetInformation.sheetName,
-    //   isHasNext: data !== null,
-    // };
-    // let err;
-    // data = data instanceof Error ? data : { [section]: data };
-    // const setGlobalError = (e: any) => (err = e);
-
-    // if (this.handler instanceof ImporterHandler) {
-    //   await this.handler.run(data, filter, setGlobalError);
-    //   if (err) throw err;
-    // } else for (let i = 0; i < this.handler.length; i++) data = await this.handler[i](data, filter);
-  }
-
-  override async onErrors(errors: any) {
-    errors = Array.isArray(errors) ? errors : [errors];
-    if (!this.options?.ignoreErrors) throw errors[0];
-    if (this.options?.ignoreErrors) await this.callHandler(null as any, errors[0]);
-    else for (let i = 0; i < errors.length; i++) await this.callHandler(null as any, errors[i]);
-  }
 }

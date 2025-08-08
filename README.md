@@ -5,7 +5,7 @@
   <h3>DataInOut</h3>
 </div>  
 <br>
-This package supports importing and exporting reports for Node.js. For importing, datainout uses Excel and CSV files to load data. For exporting, the package supports various file formats such as HTML, PDF, Excel, CSV, and more.
+This package enables data import and export (report-based) for Node.js applications. For importing, datainout uses Excel and CSV files to load data. For exporting, the package supports various file formats such as HTML, PDF, Excel, CSV, and more.
 
 ### Contents
 
@@ -16,7 +16,7 @@ This package supports importing and exporting reports for Node.js. For importing
 5. [Import](#v-import)
 6. [Report](#vi-report)
 
-### I. Quicks start
+### I. Quick start
 
 - Install:
 
@@ -96,7 +96,7 @@ Syntax for Defining a Data Variable in a Cell:
 <SYNTAX_TABLE>[field name]->[option1]&[option2]...
 ```
 
-Example to defines a table variable named title, with type string and marked as required during import: `$$title->type=string&required`.
+Example defining a table variable named title, with type string, and marked as required during import: `$$title->type=string&required`.
 
 Available Options:
 
@@ -234,9 +234,9 @@ This allows flexible handling of imported data in batches, making it easier to v
 
 ##### Feature:
 
-| **Key** | **Required** | **Note**                                                                                                                                                                                                                                              |
-| ------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| eachRow | Optional     | **Boolean** – A boolean flag can be provided to indicate how data should be processed. If `eachRow` is `false` (**default**), the handler will process data in chunks (batches of rows). `Otherwise`, the handler will process each row individually. |
+| **Key** | **Required** | **Note**                                                                  |
+| ------- | ------------ | ------------------------------------------------------------------------- |
+| eachRow | Optional     | **Boolean** – Indicates whether to process data row by row or in batches. |
 
 ##### Method:
 
@@ -248,7 +248,7 @@ Function to process data in chunks.
 
 | Name   | Type                                        | Description                             |
 | ------ | ------------------------------------------- | --------------------------------------- |
-| chunk  | Array                                       | Data in chunks needs to be processed.   |
+| chunk  | Array                                       | The chunk of data to be processed.      |
 | filter | [FilterImportHandler](#filterimporthandler) | Detailed information of the data chunk. |
 
 `Return:` Promise<void>
@@ -278,7 +278,7 @@ Function to process header data.
 
 | Name   | Type                                        | Description                             |
 | ------ | ------------------------------------------- | --------------------------------------- |
-| chunk  | Array                                       | Data in chunks needs to be processed.   |
+| chunk  | Array                                       | The chunk of data to be processed.      |
 | filter | [FilterImportHandler](#filterimporthandler) | Detailed information of the data chunk. |
 
 `Return:` Promise<void>
@@ -293,7 +293,7 @@ Function to process footer data.
 
 | Name   | Type                                        | Description                             |
 | ------ | ------------------------------------------- | --------------------------------------- |
-| chunk  | Array                                       | Data in chunks needs to be processed.   |
+| chunk  | Array                                       | The chunk of data to be processed.      |
 | filter | [FilterImportHandler](#filterimporthandler) | Detailed information of the data chunk. |
 
 `Return:` Promise<void>
@@ -318,7 +318,7 @@ A handler can also be defined as an array of `ImporterHandlerFunction`. In this 
 
 | Params | Type                                        | Note                                    |
 | ------ | ------------------------------------------- | --------------------------------------- |
-| data   | `TableData` or `Error` or `Error`[]         | data needs to proccess                  |
+| data   | `TableData` or `Error` or `Error`[]         | data needs to process                   |
 | filter | [FilterImportHandler](#filterimporthandler) | Detailed information of the data chunk. |
 
 **Return:** `Any`.
@@ -387,42 +387,42 @@ await exporter.write(
 
 #### Class Exporter:
 
-**Method write():** Write file by path.
+**Method write():** Write the file to the specified path.
 
 - arguments:
 
-| Key  | Required | Note                                                                                     |
-| ---- | -------- | ---------------------------------------------------------------------------------------- |
-| arg1 | true     | **string**                                                                               |
-| arg2 | true     | [TableData](#tabledata) or [TableDataPartialDataTransfer](#tabledatapartialdatatransfer) |
-| arg3 | false    | [ExcelExporterOptions](#excelexporteroptions)                                            |
+| Key  | Required | Note                                                                             |
+| ---- | -------- | -------------------------------------------------------------------------------- |
+| arg1 | true     | **string**                                                                       |
+| arg2 | true     | [TableData](#tabledata) or [TablePartialDataTransfer](#tablepartialdatatransfer) |
+| arg3 | false    | [ExcelExporterOptions](#excelexporteroptions)                                    |
 
 - return: _void_
 
 </br>
 
-**Method toBuffer():** create file, return buffers.
+**Method toBuffer():** Generate the file and return it as a buffer.
 
 - arguments:
 
-| Key  | Required | Note                                                                                     |
-| ---- | -------- | ---------------------------------------------------------------------------------------- |
-| arg1 | true     | [TableData](#tabledata) or [TableDataPartialDataTransfer](#tabledatapartialdatatransfer) |
-| arg2 | false    | [ExcelExporterOptions](#excelexporteroptions)                                            |
+| Key  | Required | Note                                                                             |
+| ---- | -------- | -------------------------------------------------------------------------------- |
+| arg1 | true     | [TableData](#tabledata) or [TablePartialDataTransfer](#tablepartialdatatransfer) |
+| arg2 | false    | [ExcelExporterOptions](#excelexporteroptions)                                    |
 
 - return: _Buffer_
 
 </br>
 
-**Method streamTo():** Create the file using a stream. Suitable for exporting Excel files with large data.
+**Method streamTo():** Create the file using a stream. Suitable for exporting large Excel datasets.
 
 - arguments:
 
-| Key  | Required | Note                                                          |
-| ---- | -------- | ------------------------------------------------------------- |
-| arg1 | true     | **string** or **Writable**                                    |
-| arg2 | true     | [TableDataPartialDataTransfer](#tabledatapartialdatatransfer) |
-| arg3 | false    | [ExcelExporterOptions](#excelexporteroptions)                 |
+| Key  | Required | Note                                                  |
+| ---- | -------- | ----------------------------------------------------- |
+| arg1 | true     | **string** or **Writable**                            |
+| arg2 | true     | [TablePartialDataTransfer](#tablepartialdatatransfer) |
+| arg3 | false    | [ExcelExporterOptions](#excelexporteroptions)         |
 
 - return: _void_
 
@@ -434,7 +434,7 @@ Details:
 - footer: Data of footer sheet.
 - table: Array of items.
 
-##### TableDataPartialDataTransfer
+##### TablePartialDataTransfer
 
 Details:
 

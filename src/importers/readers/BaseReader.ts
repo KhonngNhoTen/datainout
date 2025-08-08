@@ -31,7 +31,7 @@ export abstract class BaseReader {
     this.typeParser = opts.typeParser ?? new TypeParser();
     this.templateManager = opts.templateManager;
     this.convertorRows2TableData = new ConvertorRows2TableData({
-      onTrigger: async (sect, data) => await this.onTrigger(sect, data),
+      onTrigger: async (sect, data) => await this.callHandler(sect, data),
       onErrors: async (err) => await this.onErrors(err),
       chunkSize: opts?.chunkSize,
       templateManager: this.templateManager,
@@ -47,7 +47,7 @@ export abstract class BaseReader {
     opts?: ImporterLoadFunctionOpions
   ) {
     this.convertorRows2TableData = new ConvertorRows2TableData({
-      onTrigger: async (sect, data) => await this.onTrigger(sect, data),
+      onTrigger: async (sect, data) => await this.callHandler(sect, data),
       onErrors: async (err) => await this.onErrors(err),
       chunkSize: opts?.chunkSize,
       templateManager: this.templateManager,
@@ -58,63 +58,43 @@ export abstract class BaseReader {
     this.templateManager = templateManager;
 
     await this.load(arg);
-    this.consumeData();
-  }
-
-  protected async consumeData() {
-    while (this.globalError === undefined) {
-      const queueData = this.queueData.shift();
-      if (queueData && queueData.data) await this.ringPromise.run(queueData?.data, queueData?.filter);
-      else if (!queueData?.data) break;
-      else if (!queueData) await new Promise((r) => setTimeout(r, 2));
-
-      if (this.globalError) {
-        console.error("Error occurred, stopping the reader.");
-        break;
-      }
-    }
   }
 
   public getType() {
     return this.type;
   }
 
+  protected setGlobalError(err: Error) {
+    if (!this.options?.ignoreErrors && this.globalError) this.globalError = err;
+  }
+
   protected createTask() {
-    return async (data: any | any[], filter: FilterImportHandler) => {
-      if (this.handler instanceof ImporterHandler) await this.handler.run(data, filter, this.setGlobalError);
-      else
-        for (let i = 0; i < this.handler.length; i++) {
-          try {
-            data = await this.handler[i](data, filter);
-          } catch (error) {
-            this.setGlobalError(error as Error);
-          }
-        }
+    return async (section: SheetSection, data: any) => {
+      const filter: FilterImportHandler = {
+        section: section,
+        sheetIndex: this.templateManager.SheetInformation.sheetIndex ?? 0,
+        sheetName: this.templateManager.SheetInformation.sheetName,
+        isHasNext: data !== null,
+      };
+      let err;
+      data = data instanceof Error ? data : { [section]: data };
+      const setGlobalError = (e: any) => (err = e);
+
+      if (this.handler instanceof ImporterHandler) {
+        await this.handler.run(data, filter, setGlobalError);
+        if (err) throw err;
+      } else for (let i = 0; i < this.handler.length; i++) data = await this.handler[i](data, filter);
     };
   }
 
-  protected async onTrigger(section: SheetSection, data: any) {
-    const filter: FilterImportHandler = {
-      section: section,
-      sheetIndex: this.templateManager.SheetInformation.sheetIndex ?? 0,
-      sheetName: this.templateManager.SheetInformation.sheetName,
-      isHasNext: data !== null,
-    };
-    await this.queueData.waiting();
-    this.queueData.add({ data, filter });
+  protected async callHandler(section: SheetSection, data: any) {
+    await this.ringPromise.run(section, data);
   }
 
   protected async onErrors(errors: any) {
     errors = Array.isArray(errors) ? errors : [errors];
-    const task = this.createTask();
-    if (this.options?.ignoreErrors) this.setGlobalError(errors[0]);
-    else
-      for (let i = 0; i < errors.length; i++) {
-        await task(errors[i], null as any);
-      }
-  }
-
-  protected setGlobalError(err: Error) {
-    if (!this.options?.ignoreErrors && this.globalError) this.globalError = err;
+    if (!this.options?.ignoreErrors) throw errors[0];
+    if (this.options?.ignoreErrors) await this.callHandler(null as any, errors[0]);
+    else for (let i = 0; i < errors.length; i++) await this.callHandler(null as any, errors[i]);
   }
 }

@@ -33,14 +33,31 @@ export class Importer {
     await reader.run(this.excelsTemplate, arg as any, handler, opts);
   }
 
-  createStream(arg: string, handler: ImporterHandlerInstance, type?: ImporterBaseReaderStreamType): Omit<IBaseStream, "onError">;
-  createStream(arg: Readable, handler: ImporterHandlerInstance, type?: ImporterBaseReaderStreamType): Omit<IBaseStream, "onError">;
-  createStream(arg: unknown, handler: ImporterHandlerInstance, type?: ImporterBaseReaderStreamType): Omit<IBaseStream, "onError"> {
-    if (!type) type = "excel-stream";
+  createStream(
+    arg: string,
+    handler: ImporterHandlerInstance,
+    opts?: ImporterLoadFunctionOpions & { type?: ImporterBaseReaderStreamType }
+  ): Omit<IBaseStream, "onError">;
+  createStream(
+    arg: Readable,
+    handler: ImporterHandlerInstance,
+    opts?: ImporterLoadFunctionOpions & { type?: ImporterBaseReaderStreamType }
+  ): Omit<IBaseStream, "onError">;
+  createStream(
+    arg: unknown,
+    handler: ImporterHandlerInstance,
+    opts?: ImporterLoadFunctionOpions & { type?: ImporterBaseReaderStreamType }
+  ): Omit<IBaseStream, "onError"> {
+    const type = opts?.type ?? "excel-stream";
     const fsStream = typeof arg === "string" ? fs.createReadStream(pathImport(arg, "layoutDir")) : arg;
     //   if (opts?.workerSize) this.workerPools = createWorkerPool(opts?.workerSize);
 
-    const readerStream = new ExcelJsStreamReader(this.excelsTemplate, fsStream as any, handler);
+    const readerStream = new ExcelJsStreamReader({
+      templateManager: this.excelsTemplate,
+      readable: fsStream as any,
+      handler,
+      options: opts,
+    });
     return readerStream as unknown as Omit<IBaseStream, "onError">;
   }
 
