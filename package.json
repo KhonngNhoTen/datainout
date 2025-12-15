@@ -1,6 +1,6 @@
 {
   "name": "datainout",
-  "version": "1.1.2-beta",
+  "version": "2.0.0-beta",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/type.d.ts",
@@ -8,7 +8,8 @@
   "scripts": {
     "build": "rm -r ./dist && tsup",
     "publish": "npm run build && npm publish --access public",
-    "format": "npx prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\""
+    "format": "npx prettier --write \"./**/*.{js,jsx,mjs,cjs,ts,tsx,json}\"",
+    "dev": "node --loader ts-node/esm src/test.ts"
   },
   "keywords": [
     "Import",
