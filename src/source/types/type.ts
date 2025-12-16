@@ -4,5 +4,5 @@ export type SourceType = "excel" | "csv" | "log" ;//| "log" | "api";
 export type RawRecord = {
     type: RawRecordType;
     fields: Record<string, any>;
-    metadata?: Record<string, any>;
+    metadata?: Record<string, any>[];
 }

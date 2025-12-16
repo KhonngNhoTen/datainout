@@ -5,8 +5,6 @@ import { ReaderOpenOpts, TableRowRaw } from "./type.js";
 export class ExcelReader implements IReader {
    
     private workBook!: exceljs.Workbook;
-    private metadata: any = {};
-
     async open(options?: ReaderOpenOpts): Promise<void> {
         this.workBook = new exceljs.Workbook();
         if (options?.filePath) await this.workBook.xlsx.readFile(options?.filePath);

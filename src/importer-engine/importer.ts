@@ -25,8 +25,7 @@ export class Importer<T extends Template> extends Engine<T> {
 
     }
 
-    protected handleRecord(record: RawRecord): MappedRecord | undefined {
-        const dto = record.type !== "object" ? this.transformer.parse(record) : record as any;
+    protected handleRecord(dto: MappedRecord): MappedRecord | undefined {
         const validate = this.validator.check(dto);
         if (validate.length > 0) {
             this.handleError;
@@ -34,6 +33,5 @@ export class Importer<T extends Template> extends Engine<T> {
             return undefined;
         }
         return dto;
-
     }
 } 

@@ -1,10 +1,7 @@
-import { Template } from "ejs";
 import { BaseValidator, ValidationOptions } from "./base-validator.js";
 import { ValidateResult } from "./types/type.js";
 import { BaseTemplate } from "../template-mappers/base-template.js";
-import { TableTemplateOpts } from "../template-mappers/types/table-template.type.js";
-import { TableScope, TemplateField } from "../template-mappers/types/template.type.js";
-import { MappedRecord } from "../transformer/types/transformer-dto.js";
+import { TemplateField } from "../template-mappers/types/template.type.js";
 
 export class Validators extends BaseValidator {
     applyTemplate(value: any, fieldTemplate: TemplateField): { value: any, checked: ValidateResult } {

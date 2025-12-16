@@ -5,16 +5,10 @@ export type TableScope = "metadata"|"table";
 export type TemplateField = {
         name: string;
         type: string;
-        address: string;
-        addressDetail: {
-            row: number;
-            column: string;
-        };
         scope: TableScope
         required?: boolean;
         validate?: (data: any) => ValidateResult;
         setValue?: (data: any) => any;
-        // metadata?: Record<string, any>;
 }
 
 export type Template = {

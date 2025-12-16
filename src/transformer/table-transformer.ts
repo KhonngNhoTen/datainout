@@ -10,39 +10,67 @@ import { TableRowRaw } from "../readers/type.js";
 import { BaseTemplate } from "../template-mappers/base-template.js";
 
 export class TableTransformer extends BaseTransformer<TableTemplateOpts> {
-
-    private groupByAddress: Record<string, TemplateField> = {};
+    private cachedMetadata: any = {};
+    private visitedMetdata = false;
 
     constructor(template: BaseTemplate<TableTemplateOpts>) {
         super(template);
-        this.templateStrct.fields.forEach(e => this.groupByAddress[`${e.scope}:${e.address}`] = e);
-        this.templateStrct.metadata.forEach(e => this.groupByAddress[`${e.scope}:${e.address}`] = e);
     }
 
-    parse(record: RawRecord) {
-        const table: MappedRecord = {} as any;
+
+    parse(record: RawRecord): MappedRecord {
+        this.setMetadata(record);
+
+        const dto: any = {};
         const _record = record as unknown as TableRowRaw;
-        const scope = ExcelHelper.getScope(_record.number, this.templateStrct.table);
-        let row: any = {};
+        const groupValues = this.groupByAddress(_record.cells, "table");
 
-        _record.cells.forEach(cell => {
-            const value = this.parseCell(cell, scope);
-            if (!value) return;
-            if (scope === "table") row[value.name] = cell.value;
-            else if (scope === "metadata") this.savedMetadata[value.name] = value;
+        this.templateStrct.fields.forEach(f => {
+            const cell = groupValues[f.address];
+            if(!cell) return;
+            const value = f.setValue ? f.setValue(cell.value) : cell.value;
+            dto[f.name] = value;
         });
-        table.fields.push(row);
-        table.type = record.type;
-        table.metadata = this.savedMetadata;
-        return table;
+        
+        return {
+            fields: dto,
+            metadata: this.cachedMetadata,
+            type: "table"
+        };
     }
 
-    parseCell(cell: TemplateCellOpts, scope: TableScope) {
-        if (!this.groupByAddress[`${scope}:${cell.address}`]) return undefined;
-        const field = this.groupByAddress[`${scope}:${cell.address}`];
-        return {
-            name: field.name,
-            value: field
+    setMetadata(record: RawRecord) {
+        if(this.visitedMetdata) return;
+        if(this.templateStrct.metadata?.length <= 0) return;
+
+        const metadata: any = {};
+        const cells: (TemplateCellOpts & {value: any})[] = [];
+        (record.metadata as TableRowRaw[]).forEach(m => cells.push(...m.cells));
+        const groupValues = this.groupByAddress(cells, "metadata");
+
+        this.templateStrct.metadata.forEach(m => {
+            const cell = groupValues[m.address];
+            if(!cell) return;
+            
+            const value = m.setValue ? m.setValue(cell.value) : cell.value;
+            metadata[m.name] = value;
+        });
+
+        this.cachedMetadata = metadata;
+        this.visitedMetdata = true;
+    }
+
+    groupByAddress(cells: (TemplateCellOpts & {value: any})[], scope: TableScope) {
+        if(scope === "metadata") {
+            return cells.reduce((acc: any, c) => {
+                acc[c.address] = c;
+                return acc;
+            }, {})
+        } else {
+            return cells.reduce((acc: any, c) => {
+                acc[c.addressDetail.column] = c;
+                return acc;
+            }, {})
         }
     }
 }

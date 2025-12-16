@@ -14,9 +14,4 @@ export abstract class BaseTransformer<T extends Template> {
     }
 
     abstract parse(record: RawRecord): MappedRecord;
-    
-    parseField(value: any, templeField: TemplateField) {
-        if (value === undefined) return undefined;
-        return templeField.setValue ? templeField.setValue(value) : value;
-    }
 }

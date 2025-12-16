@@ -12,24 +12,21 @@ export type Style = {
 }
 export type TemplateCellOpts = {
     isVariable: boolean,
-    address: {
-        row: number,
-        column: string
-    },
+    address: string;
+    addressDetail: {
+        row: number;
+        column: string;
+    };
     formula: Cell["formula"],
-    
+
 } & TemplateField & Style
 
-export type TableTemplateOpts = {
+export type TableTemplateOpts = Omit<Template, "fields"|"metadata"> & Style & {
     table: {
         startAt: number,
         endAt?: number
     },
     fields: TemplateCellOpts[],
-    // model: Partial<RowModel> | null;
-    // height: number;
-    // outlineLevel?: number;
-    // cellCount: number;
-	// actualCellCount: number;
-} & Omit<Template, "fields"> & Style;
+    metadata: TemplateCellOpts[],
+};
 

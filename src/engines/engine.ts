@@ -43,9 +43,9 @@ export abstract class Engine<T extends Template> {
         for await (const records of await this.source.getIterator()) {
             data = []
             for await (const record of records) {
-
                 this.eventBus?.emit(Events.onRecord, {});
-                const dto = this.handleRecord(record);
+                let dto = record.type !== "object" ? this.transformer.parse(record) : record as any;
+                dto = this.handleRecord(dto);
                 if (!dto) continue;
                 data.push(dto)
                 this.eventBus?.emit(Events.finishedRecord, {});
@@ -63,8 +63,7 @@ export abstract class Engine<T extends Template> {
 
     protected handleError() { }
 
-    protected handleRecord(record: RawRecord) {
-        const dto = record.type !== "object" ? this.transformer.parse(record) : record as any;
+    protected handleRecord(dto: MappedRecord) {
         const validate = this.validator.check(dto);
         if (validate.length > 0) {
             this.handleError;

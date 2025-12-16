@@ -13,7 +13,7 @@ export enum FileExtension {
 
 export abstract class FileSink implements Sink {
     protected typeOutput!: FileOutputType;
-    protected extension!: FileExtension;
+    protected extension: FileExtension = FileExtension.EXCEL;
     abstract handle(chunk: MappedRecord[]): Promise<void>;
     
 }

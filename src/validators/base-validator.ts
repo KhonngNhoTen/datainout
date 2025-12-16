@@ -59,6 +59,5 @@ export abstract class BaseValidator {
 
     /** Apply and check data with template */
     abstract applyTemplate(value: any, fieldTemplate: TemplateField): { value: any, checked: ValidateResult };
-
-
+    
 }
