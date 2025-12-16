@@ -8,9 +8,11 @@ export class PathHelper {
     static getPath(mode: "import", _path: string, fieldName?: ListOfPathImports): string
     static getPath(mode: "report", _path: string, fieldName?: ListOfPathReports): string
     static getPath(mode: "import" | "report", _path: string, fieldName?: ListOfPathImports | ListOfPathReports): string {
-        if(mode === "import") return this.pathImport(_path, fieldName as ListOfPathImports);
-        else if(mode === "report") return this.pathReport(_path, fieldName as ListOfPathReports);
-        return "";
+        let path = ""
+        if(mode === "import") path = this.pathImport(_path, fieldName as ListOfPathImports);
+        else if(mode === "report") path = this.pathReport(_path, fieldName as ListOfPathReports);
+        const ext =getConfig().templateExtension ?? "js";
+        return `${path}${ext}`;
     }
 
     private static pathReport(_path: string, fieldName?: ListOfPathReports) {

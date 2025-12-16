@@ -1,7 +1,7 @@
 import { Events } from "../common/constant/events.js";
 import { EventBus } from "../common/event-bus.js";
 import { Sink } from "../sinks/base-sinks.js";
-import { SourceAdapter } from "../source/source.js";
+import { BaseSource } from "../source/base-source.js";
 import { RawRecord } from "../source/types/type.js";
 import { BaseTemplate } from "../template-mappers/base-template.js";
 import { Template } from "../template-mappers/types/template.type.js";
@@ -10,7 +10,7 @@ import { MappedRecord } from "../transformer/types/transformer-dto.js";
 import { BaseValidator } from "../validators/base-validator.js";
 
 export abstract class Engine<T extends Template> {
-    protected source!: SourceAdapter;
+    protected source!: BaseSource;
     private template!: BaseTemplate<T>;
     protected transformer!: BaseTransformer<Template>
     protected validator!: BaseValidator;
@@ -19,7 +19,7 @@ export abstract class Engine<T extends Template> {
     protected eventBus!: EventBus;
 
     constructor(
-        source: SourceAdapter,
+        source: BaseSource,
         template: BaseTemplate<T>,
         transformer: BaseTransformer<Template>,
         validator: BaseValidator,
@@ -35,24 +35,26 @@ export abstract class Engine<T extends Template> {
     }
 
     async run() {
-        this.eventBus.emit(Events.onFile, {});
+        this.eventBus?.emit(Events.onFile, {});
         await this.source.open();
         await this.sink.open?.();
         let data: MappedRecord[] = [];
+        
         for await (const records of await this.source.getIterator()) {
             data = []
             for await (const record of records) {
-                this.eventBus.emit(Events.onRecord, {});
+
+                this.eventBus?.emit(Events.onRecord, {});
                 const dto = this.handleRecord(record);
                 if (!dto) continue;
                 data.push(dto)
-                this.eventBus.emit(Events.finishedRecord, {});
+                this.eventBus?.emit(Events.finishedRecord, {});
             }
             await this.sink.handle(data);
         }
         await this.sink.close?.();
         await this.source.close();
-        this.eventBus.emit(Events.finishedFile, {});
+        this.eventBus?.emit(Events.finishedFile, {});
     }
 
     get Template(): BaseTemplate<T> {
@@ -62,7 +64,7 @@ export abstract class Engine<T extends Template> {
     protected handleError() { }
 
     protected handleRecord(record: RawRecord) {
-        const dto = this.transformer.parse(record);
+        const dto = record.type !== "object" ? this.transformer.parse(record) : record as any;
         const validate = this.validator.check(dto);
         if (validate.length > 0) {
             this.handleError;

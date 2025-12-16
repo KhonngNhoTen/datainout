@@ -39,10 +39,8 @@ export class ExcelReader implements IReader {
     }
 
     cancel(): void {
-        throw new Error("Method not implemented.");
     }
 
-    close(): Promise<void> {
-        throw new Error("Method not implemented.");
+    async close() {
     }
 }

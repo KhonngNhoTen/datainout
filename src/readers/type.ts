@@ -3,7 +3,7 @@ import { TemplateCellOpts } from "../template-mappers/types/table-template.type.
 import { RawRecordType } from "../source/types/type.js";
 
 export type TableRowRaw = {
-    cells: TemplateCellOpts[],
+    cells: (TemplateCellOpts & {value: any})[],
     model: Partial<RowModel> | null;
     height: number;
     outlineLevel?: number;

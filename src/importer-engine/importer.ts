@@ -1,8 +1,7 @@
 import { Events } from "../common/constant/events.js";
 import { Engine } from "../engines/engine.js";
-import { EventBus } from "../common/event-bus.js";
 import { Sink } from "../sinks/base-sinks.js";
-import { SourceAdapter } from "../source/source.js";
+import { BaseSource } from "../source/base-source.js";
 import { RawRecord } from "../source/types/type.js";
 import { BaseTemplate } from "../template-mappers/base-template.js";
 import { Template } from "../template-mappers/types/template.type.js";
@@ -12,7 +11,7 @@ import { BaseValidator } from "../validators/base-validator.js";
 
 export class Importer<T extends Template> extends Engine<T> {
     constructor(
-        source: SourceAdapter,
+        source: BaseSource,
         template: BaseTemplate<T>,
         transformer: BaseTransformer<Template>,
         validator: BaseValidator,
@@ -27,7 +26,7 @@ export class Importer<T extends Template> extends Engine<T> {
     }
 
     protected handleRecord(record: RawRecord): MappedRecord | undefined {
-        const dto = this.transformer.parse(record);
+        const dto = record.type !== "object" ? this.transformer.parse(record) : record as any;
         const validate = this.validator.check(dto);
         if (validate.length > 0) {
             this.handleError;

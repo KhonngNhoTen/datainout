@@ -1,5 +1,5 @@
 import { Template } from "ejs";
-import { BaseValidator,  ValidationOptions } from "./base-validator.js";
+import { BaseValidator, ValidationOptions } from "./base-validator.js";
 import { ValidateResult } from "./types/type.js";
 import { BaseTemplate } from "../template-mappers/base-template.js";
 import { TableTemplateOpts } from "../template-mappers/types/table-template.type.js";
@@ -7,10 +7,22 @@ import { TableScope, TemplateField } from "../template-mappers/types/template.ty
 import { MappedRecord } from "../transformer/types/transformer-dto.js";
 
 export class Validators extends BaseValidator {
-    checkField(value: any, fieldTemplate: TemplateField): ValidateResult {
-        throw new Error("Method not implemented.");
+    applyTemplate(value: any, fieldTemplate: TemplateField): { value: any, checked: ValidateResult } {
+        let checked: ValidateResult = { validate: true };
+        if (!fieldTemplate) checked = { validate: false, msg: "Missing template field" };
+
+        if (fieldTemplate.setValue)
+            value = fieldTemplate.setValue(value);
+
+        if (fieldTemplate.required === true && value === undefined) checked = { validate: false, msg: "Field is required" };
+        if (fieldTemplate.validate) {
+            const rs = fieldTemplate.validate(value);
+            if (rs.validate === false) checked = { validate: rs.validate, msg: rs.msg ?? "Validate fail" };
+        }
+
+        return { checked, value };
     }
-  
+
     constructor(template: BaseTemplate<any>, options?: ValidationOptions) {
         super(template, options);
     }

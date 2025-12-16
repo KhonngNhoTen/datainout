@@ -28,7 +28,7 @@ export class TableTransformer extends BaseTransformer<TableTemplateOpts> {
         _record.cells.forEach(cell => {
             const value = this.parseCell(cell, scope);
             if (!value) return;
-            if (scope === "table") row[value.name] = value;
+            if (scope === "table") row[value.name] = cell.value;
             else if (scope === "metadata") this.savedMetadata[value.name] = value;
         });
         table.fields.push(row);

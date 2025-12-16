@@ -32,29 +32,33 @@ export abstract class BaseValidator {
         for (let j = 0; j < this.fieldNames.length; j++) {
             const name = this.fieldNames[j];
             const templateStrctField = this.template.getByName(name);
-            const validate = this.checkField(fields[name], templateStrctField);
-            if (validate.validate) validationResults.push(validate);        }
+            const validate = this.applyTemplate(fields[name], templateStrctField);
+            if (validate.checked.validate) validationResults.push(validate.checked);
+            dto.fields[name] = validate.value;
+        }
 
-        return []
+        return validationResults;
     }
 
     private checkMetadata(metadata: Record<string, any>): ValidateResult[] {
         const validationResults: ValidateResult[] = [];
-        const keys = Object.keys(metadata);
+        const keys = metadata ? Object.keys(metadata) : [];
         for (let i = 0; i < keys.length; i++) {
             const key = keys[i];
             const field = metadata[key];
             const templateStrctField = this.template.getByName(key, "metadata");
             if (!templateStrctField) continue;
-            const validate = this.checkField(field, templateStrctField);
-            if (validate.validate) validationResults.push(validate);
+            const validate = this.applyTemplate(field, templateStrctField);
+            if (validate.checked.validate) validationResults.push(validate.checked);
+            metadata[key] = validate.value;
         }
 
         this.checkedMetadata = true;
-        return []
+        return validationResults
     }
 
-    abstract checkField(value: any, fieldTemplate: TemplateField): ValidateResult;
+    /** Apply and check data with template */
+    abstract applyTemplate(value: any, fieldTemplate: TemplateField): { value: any, checked: ValidateResult };
 
 
 }

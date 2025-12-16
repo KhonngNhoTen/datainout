@@ -34,12 +34,12 @@ export class EngineFactory {
     }
 
     protected static createTemplate(type: SourceType, templatePath: string) {
-        const tempPath = PathHelper.getPath("import", templatePath);
+        const tempPath = PathHelper.getPath("import", templatePath, "templateDir");
         let template!: BaseTemplate<any>;
 
         if (!fs.existsSync(tempPath)) template = new BaseTemplate();
         else {
-            const templOpts: Template = require(tempPath).template;
+            const templOpts: Template = require(tempPath);
             if (templOpts.type === "table") template = new BaseTemplate(templOpts);
         }
         return template;
@@ -47,8 +47,8 @@ export class EngineFactory {
 
     protected static createSource(type: SourceType, options: SourceOptions, template: BaseTemplate<any>) {
         let source!: SourceAdapter;
-        if (type === "excel")
-            source = new SourceAdapter(template.getStructure(), options);
+        if (type === "excel") source = new SourceAdapter();
+        source.init(template.getStructure(), options);
         return source;
     }
 

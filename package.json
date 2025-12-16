@@ -32,24 +32,34 @@
     "exceljs": "^4.4.0"
   },
   "exports": {
-    "./importers": {
+    "./importer": {
       "import": {
-        "import": "./dist/importers/index.js",
-        "types": "./dist/importers/index.d.ts"
+        "import": "./dist/importer-engine/index.js",
+        "types": "./dist/importers-engine/index.d.ts"
       },
       "require": {
-        "require": "./dist/importers/index.cjs",
-        "types": "./dist/importers/index.d.cts"
+        "require": "./dist/importer-engine/index.cjs",
+        "types": "./dist/importer-engine/index.d.cts"
       }
     },
     "./reporters": {
       "import": {
-        "import": "./dist/reporters/index.js",
-        "types": "./dist/reporters/index.d.ts"
+        "import": "./dist/reporter-engine/index.js",
+        "types": "./dist/reporter-engine/index.d.ts"
       },
       "require": {
-        "require": "./dist/reporters/index.cjs",
-        "types": "./dist/reporters/index.d.cts"
+        "require": "./dist/reporter-engine/index.cjs",
+        "types": "./dist/reporter-engine/index.d.cts"
+      }
+    },
+    "./common": {
+      "import": {
+        "import": "./dist/index.js",
+        "types": "./dist/index.d.ts"
+      },
+      "require": {
+        "require": "./dist/index.cjs",
+        "types": "./dist/index.d.cts"
       }
     },
     "./template-generators": {

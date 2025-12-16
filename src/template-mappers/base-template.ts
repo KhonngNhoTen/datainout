@@ -1,4 +1,5 @@
 import { SourceType } from "../source/types/type.js";
+import { MappedRecord } from "../transformer/types/transformer-dto.js";
 import { TableScope, Template } from "./types/template.type.js";
 
 export class BaseTemplate<T extends Template> {
@@ -8,8 +9,8 @@ export class BaseTemplate<T extends Template> {
     constructor(template?: T) {
         if (template) {
             this.template = template;
-            template.fields.forEach(e => this.cachedByName[e.name] = e);
-            template.metadata.forEach(e => this.cachedByName[e.name] = e);
+            template?.fields.forEach(e => this.cachedByName[e.name] = e);
+            template?.metadata.forEach(e => this.cachedByName[e.name] = e);
         }
     }
 
@@ -49,6 +50,10 @@ export class BaseTemplate<T extends Template> {
 
     getStructure(): T {
         return this.template;
+    }
+
+    applyDto(dto: MappedRecord) {
+
     }
 
 }
