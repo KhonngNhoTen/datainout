@@ -32,9 +32,8 @@ export abstract class BaseValidator {
         for (let j = 0; j < this.fieldNames.length; j++) {
             const name = this.fieldNames[j];
             const templateStrctField = this.template.getByName(name);
-            const validate = this.applyTemplate(fields[name], templateStrctField);
-            if (validate.checked.validate) validationResults.push(validate.checked);
-            dto.fields[name] = validate.value;
+            const validate = this.checkField(fields[name], templateStrctField);
+            if (validate.validate === false) validationResults.push(validate);
         }
 
         return validationResults;
@@ -48,16 +47,14 @@ export abstract class BaseValidator {
             const field = metadata[key];
             const templateStrctField = this.template.getByName(key, "metadata");
             if (!templateStrctField) continue;
-            const validate = this.applyTemplate(field, templateStrctField);
-            if (validate.checked.validate) validationResults.push(validate.checked);
-            metadata[key] = validate.value;
+            const validate = this.checkField(field, templateStrctField);
+            if (validate.validate === false) validationResults.push(validate);
         }
 
         this.checkedMetadata = true;
         return validationResults
     }
 
-    /** Apply and check data with template */
-    abstract applyTemplate(value: any, fieldTemplate: TemplateField): { value: any, checked: ValidateResult };
+    abstract checkField(value: any, fieldTemplate: TemplateField): ValidateResult;
     
 }

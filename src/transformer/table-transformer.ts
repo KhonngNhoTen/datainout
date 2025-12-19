@@ -27,11 +27,11 @@ export class TableTransformer extends BaseTransformer<TableTemplateOpts> {
 
         this.templateStrct.fields.forEach(f => {
             const cell = groupValues[f.address];
-            if(!cell) return;
+            if (!cell) return;
             const value = f.setValue ? f.setValue(cell.value) : cell.value;
             dto[f.name] = value;
         });
-        
+
         return {
             fields: dto,
             metadata: this.cachedMetadata,
@@ -40,18 +40,18 @@ export class TableTransformer extends BaseTransformer<TableTemplateOpts> {
     }
 
     setMetadata(record: RawRecord) {
-        if(this.visitedMetdata) return;
-        if(this.templateStrct.metadata?.length <= 0) return;
+        if (this.visitedMetdata) return;
+        if (this.templateStrct.metadata?.length <= 0) return;
 
         const metadata: any = {};
-        const cells: (TemplateCellOpts & {value: any})[] = [];
+        const cells: (TemplateCellOpts & { value: any })[] = [];
         (record.metadata as TableRowRaw[]).forEach(m => cells.push(...m.cells));
         const groupValues = this.groupByAddress(cells, "metadata");
 
         this.templateStrct.metadata.forEach(m => {
             const cell = groupValues[m.address];
-            if(!cell) return;
-            
+            if (!cell) return;
+
             const value = m.setValue ? m.setValue(cell.value) : cell.value;
             metadata[m.name] = value;
         });
@@ -60,17 +60,11 @@ export class TableTransformer extends BaseTransformer<TableTemplateOpts> {
         this.visitedMetdata = true;
     }
 
-    groupByAddress(cells: (TemplateCellOpts & {value: any})[], scope: TableScope) {
-        if(scope === "metadata") {
-            return cells.reduce((acc: any, c) => {
-                acc[c.address] = c;
-                return acc;
-            }, {})
-        } else {
-            return cells.reduce((acc: any, c) => {
-                acc[c.addressDetail.column] = c;
-                return acc;
-            }, {})
-        }
+    groupByAddress(cells: (TemplateCellOpts & { value: any })[], scope: TableScope) {
+        return cells.reduce((acc: any, c) => {
+            const key = scope === "table" ? c.addressDetail.column : c.address;
+            acc[key] = c;
+            return acc;
+        }, {});
     }
 }

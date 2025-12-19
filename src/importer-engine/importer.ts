@@ -16,9 +16,8 @@ export class Importer<T extends Template> extends Engine<T> {
         transformer: BaseTransformer<Template>,
         validator: BaseValidator,
         sink: Sink,
-        options: any,
     ) {
-        super(source, template, transformer, validator, sink, options);
+        super({source, template, transformer, validator, sink });
     }
 
     protected handleError() {
@@ -28,8 +27,8 @@ export class Importer<T extends Template> extends Engine<T> {
     protected handleRecord(dto: MappedRecord): MappedRecord | undefined {
         const validate = this.validator.check(dto);
         if (validate.length > 0) {
-            this.handleError;
-            this.eventBus.emit(Events.onRecordError, { errors: validate });
+            this.handleError();
+            this.eventBus?.emit(Events.onRecordError, { errors: validate });
             return undefined;
         }
         return dto;

@@ -8,76 +8,131 @@ import { Template } from "../template-mappers/types/template.type.js";
 import { BaseTransformer } from "../transformer/base-transformer.js";
 import { MappedRecord } from "../transformer/types/transformer-dto.js";
 import { BaseValidator } from "../validators/base-validator.js";
+import { PassThrough, Readable, TransformCallback, Writable } from "stream";
 
+type EngineContructorOptions<T extends Template> = {
+    source?: BaseSource,
+    template?: BaseTemplate<T>,
+    transformer?: BaseTransformer<Template>,
+    validator?: BaseValidator,
+    sink?: Sink,
+}
 export abstract class Engine<T extends Template> {
     protected source!: BaseSource;
     private template!: BaseTemplate<T>;
     protected transformer!: BaseTransformer<Template>
     protected validator!: BaseValidator;
     protected sink!: Sink;
-    protected options!: any;
-    protected eventBus!: EventBus;
+    protected engineStream: EngineStream = new EngineStream({
+        onChunk: (chunk) => this.handle(chunk),
+        onEnd: () => this.close(),
+    });
+    protected eventBus: EventBus = new EventBus();
+    protected doneCallback?: (value?: any) => void;
+    protected wait = () => new Promise((r) => { this.doneCallback = r; });
 
     constructor(
-        source: BaseSource,
-        template: BaseTemplate<T>,
-        transformer: BaseTransformer<Template>,
-        validator: BaseValidator,
-        sink: Sink,
-        options: any,
+        opts: EngineContructorOptions<T>
     ) {
-        this.options = options;
-        this.source = source;
-        this.template = template;
-        this.transformer = transformer;
-        this.validator = validator;
-        this.sink = sink
+        this.source = opts.source as any;
+        this.template = opts.template as any;
+        this.transformer = opts.transformer as any;
+        this.validator = opts.validator as any;
+        this.sink = opts.sink as any;
+        this.source.stream().pipe(this.engineStream);
     }
 
-    async run() {
-        this.eventBus?.emit(Events.onFile, {});
+    async start() {
+        await this.open();
+
+        await this.source.start();
+
+        await this.wait();
+    }
+
+    private async open() {
+        this.eventBus?.emit(Events.onFile);
         await this.source.open();
         await this.sink.open?.();
-        let data: MappedRecord[] = [];
-        
-        for await (const records of await this.source.getIterator()) {
-            data = []
-            for await (const record of records) {
-                this.eventBus?.emit(Events.onRecord, {});
-                let dto = record.type !== "object" ? this.transformer.parse(record) : record as any;
-                dto = this.handleRecord(dto);
-                if (!dto) continue;
-                data.push(dto)
-                this.eventBus?.emit(Events.finishedRecord, {});
-            }
-            await this.sink.handle(data);
-        }
-        await this.sink.close?.();
-        await this.source.close();
-        this.eventBus?.emit(Events.finishedFile, {});
     }
 
-    get Template(): BaseTemplate<T> {
-        return this.template;
+    private async close() {
+        await this.source.close();
+        await this.sink.close?.();
+        this.eventBus?.emit(Events.finishedFile);
+        this.doneCallback?.();
+    }
+
+    private async handle(records: RawRecord[]) {
+        if (records === null) {
+            await this.close();
+            return;
+        }
+        const data: any[] = []
+        for (const record of records) {
+            this.eventBus?.emit(Events.onRecord);
+
+            let dto: MappedRecord | undefined = 
+                record.type === "object" ? 
+                record as any : 
+                this.transformer.parse(record);
+
+            if (dto === undefined) continue;
+            dto = this.handleRecord(dto);
+            data.push(dto);
+            this.eventBus?.emit(Events.finishedRecord);
+
+        }
+
+        await this.sink.handle(data);
+
     }
 
     protected handleError() { }
 
-    protected handleRecord(dto: MappedRecord) {
-        const validate = this.validator.check(dto);
-        if (validate.length > 0) {
-            this.handleError;
-            this.eventBus.emit(Events.onRecordError, { errors: validate });
-            return undefined;
+    protected handleRecord(dto: MappedRecord): MappedRecord | undefined { return undefined }
+
+    get Template(): BaseTemplate<T> { return this.template; }
+
+    public on(event: `${Events}`, listener: (data: any) => Promise<void>) { this.eventBus.on(event, listener); }
+
+    public off(event: `${Events}`) { this.eventBus.off(event); }
+
+}
+
+export class EngineStream extends Writable {
+    onChunk: (chunk: any) => Promise<void>;
+    onEnd?: () => Promise<void>;
+    // onStart?: () => void;
+
+    constructor(
+        opts: {
+            onChunk: (chunk: any) => Promise<void>,
+            onEnd?: () => Promise<void>
+            // onStart?: () => void,
         }
-        return dto;
+    ) {
+        super({ objectMode: true });
+        this.onChunk = opts.onChunk;
+        this.onEnd = opts.onEnd;
+        // this.onStart = opts.onStart
     }
 
-    public on(event: Events, listener: (data: any) => Promise<void>) {
-        this.eventBus.on(event, listener);
+    _write(
+        chunk: any,
+        encoding: BufferEncoding,
+        callback: (error?: Error | null) => void
+    ): void {
+        this.onChunk(chunk)
+            .then(() => callback())
+            .catch((err) => {
+                callback(err);
+            });
     }
-    
-    public off(event: Events) {
-        this.eventBus.off(event);
+
+    _final(callback: (error?: Error | null) => void) {
+        this.onEnd?.().
+            then(() => callback()).
+            catch((e) => callback(e as Error));
     }
 }

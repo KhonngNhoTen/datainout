@@ -42,7 +42,7 @@
         "types": "./dist/importer-engine/index.d.cts"
       }
     },
-    "./reporters": {
+    "./reporter": {
       "import": {
         "import": "./dist/reporter-engine/index.js",
         "types": "./dist/reporter-engine/index.d.ts"
