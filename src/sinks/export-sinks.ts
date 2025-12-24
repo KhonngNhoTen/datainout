@@ -12,7 +12,7 @@ export enum FileExtension {
     PDF = "pdf"
 }
 
-export abstract class FileSink implements Sink {
+export abstract class ExportSink<T extends FileOutputType> implements Sink {
     protected typeOutput!: FileOutputType;
     protected extension: FileExtension = FileExtension.EXCEL;
     protected template!: BaseTemplate<any>;
@@ -30,5 +30,6 @@ export abstract class FileSink implements Sink {
     }
 
     abstract handle(chunk: MappedRecord[]): Promise<void>;
- 
+    
+    abstract export(): Promise<T extends "buffer" ? Buffer : T extends "file" ? void : any>;
 }

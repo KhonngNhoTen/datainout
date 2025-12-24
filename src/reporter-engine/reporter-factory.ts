@@ -1,5 +1,5 @@
 import { PathHelper } from "../helpers/path.helper.js";
-import { FileExtension, FileOutputType, FileSink } from "../sinks/file-sinks.js";
+import { FileExtension, FileOutputType } from "../sinks/export-sinks.js";
 import { BaseSource } from "../source/base-source.js";
 import { BaseTemplate } from "../template-mappers/base-template.js";
 import { Template } from "../template-mappers/types/template.type.js";
@@ -17,7 +17,10 @@ type ReportFactoryOptions = {
 }
 
 export class ReportFactory {
-    static create(pattern: ReportFactoryOptions): Reporter<any>
+    static create(pattern: Omit<ReportFactoryOptions, "typeOutput"> & { typeOutput: "buffer" }): Reporter<any, "buffer">
+    static create(pattern: Omit<ReportFactoryOptions, "typeOutput"> & { typeOutput: "file" }): Reporter<any, "file">
+    static create(pattern: Omit<ReportFactoryOptions, "typeOutput"> & { typeOutput: "stream" }): Reporter<any, "stream">
+    static create(pattern: ReportFactoryOptions): Reporter<any, any>
     {
         const template: BaseTemplate<any> =
             typeof pattern.template === "string" ?

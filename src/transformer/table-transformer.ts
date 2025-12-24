@@ -1,8 +1,8 @@
-import { RawRecord } from "../source/types/type.js";
+import { RawRecord, RawRecordType } from "../source/types/type.js";
 // import { TableTemplate } from "../template-mappers/table-template";
 import { TableTemplateOpts, TemplateCellOpts } from "../template-mappers/types/table-template.type.js";
 import { BaseTransformer } from "./base-transformer.js";
-import exceljs, { Row } from "exceljs";
+import exceljs, { Cell, Row } from "exceljs";
 import { MappedRecord } from "./types/transformer-dto.js";
 import { ExcelHelper } from "../helpers/table.helper.js";
 import { TableScope, TemplateField } from "../template-mappers/types/template.type.js";
@@ -19,14 +19,18 @@ export class TableTransformer extends BaseTransformer<TableTemplateOpts> {
 
 
     parse(record: RawRecord): MappedRecord {
-        this.setMetadata(record);
 
+        this.setMetadata(record);
         const dto: any = {};
-        const _record = record as unknown as TableRowRaw;
-        const groupValues = this.groupByAddress(_record.cells, "table");
+        const _record = record as {
+            type: RawRecordType;
+            fields: TableRowRaw;
+            metadata?: TableRowRaw[];
+        };
+        const groupValues = this.groupByAddress(_record.fields.cells, "fields");
 
         this.templateStrct.fields.forEach(f => {
-            const cell = groupValues[f.address];
+            const cell = groupValues[f.addressDetail.columnIndex];
             if (!cell) return;
             const value = f.setValue ? f.setValue(cell.value) : cell.value;
             dto[f.name] = value;
@@ -42,14 +46,12 @@ export class TableTransformer extends BaseTransformer<TableTemplateOpts> {
     setMetadata(record: RawRecord) {
         if (this.visitedMetdata) return;
         if (this.templateStrct.metadata?.length <= 0) return;
-
         const metadata: any = {};
-        const cells: (TemplateCellOpts & { value: any })[] = [];
+        const cells: (Cell & { value: any })[] = [];
         (record.metadata as TableRowRaw[]).forEach(m => cells.push(...m.cells));
         const groupValues = this.groupByAddress(cells, "metadata");
-
         this.templateStrct.metadata.forEach(m => {
-            const cell = groupValues[m.address];
+            const cell = groupValues[m.addressDetail.column];
             if (!cell) return;
 
             const value = m.setValue ? m.setValue(cell.value) : cell.value;
@@ -60,9 +62,9 @@ export class TableTransformer extends BaseTransformer<TableTemplateOpts> {
         this.visitedMetdata = true;
     }
 
-    groupByAddress(cells: (TemplateCellOpts & { value: any })[], scope: TableScope) {
+    groupByAddress(cells: (Cell & { value: any })[], scope: TableScope) {
         return cells.reduce((acc: any, c) => {
-            const key = scope === "table" ? c.addressDetail.column : c.address;
+            const key = scope === "fields" ? c.col : c.address;
             acc[key] = c;
             return acc;
         }, {});

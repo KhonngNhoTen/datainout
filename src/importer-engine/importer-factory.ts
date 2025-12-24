@@ -68,8 +68,10 @@ export class ImporterFactory {
     protected static createSource(type: SourceType, inputSource: string | Buffer, template: Template) {
         let source!: Source;
         let reader!: IReader;
-        if (type === "excel")
-            reader = new ExcelReader(inputSource as string)
+        if (type === "excel") {
+            const tableTemplate = template as TableTemplateOpts;
+            reader = new ExcelReader(inputSource as string, tableTemplate.table.startAt, tableTemplate.table.endAt);
+        }
 
         source = new Source(template, reader);
         return source;

@@ -9,7 +9,7 @@ export class BaseTemplate<T extends Template> {
     constructor(template?: T) ;
     constructor(source: SourceType, rawType: RawRecordType); 
     constructor(arg1: any, arg2?: any) {
-        if (arg2) {
+        if ( !arg2 ) {
             const template = arg1 as T;
             this.template = template;
             template?.fields.forEach(e => this.cachedByName[e.name] = e);
@@ -33,15 +33,15 @@ export class BaseTemplate<T extends Template> {
     }
 
     add(field: T['fields'][0]) {
-        if (field.scope === "table") this.template.fields.push(field);
+        if (field.scope === "fields") this.template.fields.push(field);
         else this.template.metadata.push(field);
 
         this.updateCache(field.name, field, "add");
         return this;
     }
 
-    remove(name: string, scope: TableScope = "table") {
-        if (scope === "table") this.template.fields = this.template.fields.filter(field => field.name !== name);
+    remove(name: string, scope: TableScope = "fields") {
+        if (scope === "fields") this.template.fields = this.template.fields.filter(field => field.name !== name);
         else if (scope === "metadata") this.template.metadata = this.template.metadata.filter(field => field.name !== name);
         
         this.updateCache(name, undefined, "remove");        
@@ -51,7 +51,7 @@ export class BaseTemplate<T extends Template> {
     update(name: string, field: T['fields'][0]) {
         const index = this.getIndexByName(name, field.scope);
         if (index < 0) return this;
-        if (field.scope === "table") this.template.fields[index] = field;
+        if (field.scope === "fields") this.template.fields[index] = field;
         else if (field.scope === "metadata") this.template.metadata[index] = field;
 
         this.updateCache(name, field, "update");
@@ -59,15 +59,15 @@ export class BaseTemplate<T extends Template> {
     }
 
 
-    getByName(name: string, scope: TableScope = "table"): T['fields'][0] | undefined {
-        // if (scope === "table")
+    getByName(name: string, scope: TableScope = "fields"): T['fields'][0] | undefined {
+        // if (scope === "fields")
         //     return this.template.fields.filter(field => field.name === name)?.[0] ?? undefined;
         // return this.template.metadata.filter(field => field.name === name)?.[0] ?? undefined;
         return this.cachedByName[name];
     }
 
-    getIndexByName(name: string, scope: TableScope = "table"): number {
-        if (scope === "table")
+    getIndexByName(name: string, scope: TableScope = "fields"): number {
+        if (scope === "fields")
             return this.template.fields.findIndex(field => field.name === name);
         return this.template.metadata.findIndex(field => field.name === name);
     }
@@ -75,7 +75,6 @@ export class BaseTemplate<T extends Template> {
     getStructure(): T {
         return this.template;
     }
-
 
     save(fielPath: string) {
         fs.writeFileSync(fielPath, JSON.stringify(this.template, null, 2));

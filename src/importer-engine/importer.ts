@@ -33,4 +33,13 @@ export class Importer<T extends Template> extends Engine<T> {
         }
         return dto;
     }
+
+    async start() {
+        await this.open();
+
+        await this.source.start();
+
+        await this.engineStream.waitingDone();
+    }
+
 } 

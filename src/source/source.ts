@@ -1,10 +1,10 @@
 import { ExcelHelper } from "../helpers/table.helper.js";
-import { AddCallback, IReader } from "../readers/ireader.js";
+import { AddCallback, IReader, ReaderResult } from "../readers/ireader.js";
 import { TableTemplateOpts } from "../template-mappers/types/table-template.type.js";
 import { TableScope, Template } from "../template-mappers/types/template.type.js";
 import { BaseSource, CallbackSource } from "./base-source.js";
 import { RawRecord } from "./types/type.js";
-import {Readable} from "stream";
+import {PassThrough, Readable, Transform, TransformCallback} from "stream";
 
 
 // export class SourceAdapter extends BaseSource {
@@ -64,13 +64,21 @@ export class Source extends BaseSource {
    
     protected reader!: IReader;
     protected template!: Template;
-    protected readerStream!: Readable;
 
     constructor(template: Template, reader: IReader, batchSize?: number, concurrency?: number) {
         super(batchSize, concurrency);
         this.template = template;
         this.reader = reader;
+        this.readable = new SourceTransform(this.batchSize);
         reader.stream().pipe(this.readable);
+    }
+
+    async open(): Promise<void> {
+        await this.reader.open();
+    }
+
+    async close(): Promise<void> {
+        await this.reader.close();
     }
 
     async get(add: CallbackSource): Promise<void> {}
@@ -78,4 +86,44 @@ export class Source extends BaseSource {
     async start() {
         await this.reader.start();
     }
+}
+
+class SourceTransform extends Transform{
+    private batchSize: number;
+    private metadata: any[] = [];
+    private rawRecords: RawRecord[] = [];
+    private index: number = 0;
+
+
+    constructor(batchSize: number) {
+        super({objectMode: true});
+        this.batchSize = batchSize;
+    }
+
+    _transform(data: ReaderResult, _: any, cb: any): void {
+        if(data.scope === "metadata") this.metadata.push(data);
+        else {
+            this.rawRecords.push({
+                type: data.type,
+                metadata: this.metadata,
+                fields: data,
+            });
+
+            this.index++;
+            if(this.index === this.batchSize) {
+                this.index = 0;
+                this.push(this.rawRecords);
+                this.rawRecords = [];
+            }
+        }
+        cb();
+    }
+
+    _flush(cb: any) {
+    if (this.rawRecords.length > 0) {
+        this.push(this.rawRecords);
+        this.rawRecords = [];
+    }
+    cb();
+}
 }

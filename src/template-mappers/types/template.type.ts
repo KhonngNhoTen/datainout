@@ -1,7 +1,7 @@
 import { RawRecordType, SourceType } from "../../source/types/type.js";
 import { ValidateResult } from "../../validators/types/type.js";
 
-export type TableScope = "metadata"|"table";
+export type TableScope = "metadata"|"fields";
 export type TemplateField = {
         name: string;
         type: string;

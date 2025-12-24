@@ -16,9 +16,11 @@ export type TemplateCellOpts = {
     addressDetail: {
         row: number;
         column: string;
+        columnIndex: number;
     };
     formula: Cell["formula"],
-
+    value: any;
+    style: Style;
 } & TemplateField & Style
 
 export type TableTemplateOpts = Omit<Template, "fields"|"metadata"> & Style & {

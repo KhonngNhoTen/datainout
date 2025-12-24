@@ -4,8 +4,7 @@ import { TABLE_KEY } from "../common/constant/constant.js";
 import { TableScope } from "../template-mappers/types/template.type.js";
 
 export class ExcelHelper {
-    static getVariableValue(cell: Cell) {
-        const cellValue = (cell.value + "").replace("$$", "$");
+    static getVariableValue(cellValue: any) {
 
         let fieldName = "";
         let type: AttributeType = "string";
@@ -25,10 +24,14 @@ export class ExcelHelper {
         return cellValue.includes(TABLE_KEY.VARIABLE_SYNTAX);
     }
 
-    static getScope(rownumber: number, table: { startAt: number, endAt?: number }): TableScope {
-        if(rownumber <= table.startAt) return "metadata";
-        if(table?.endAt && rownumber >= table?.endAt) return "metadata";
-        return "table";
+    static isVariableTable(cellValue: any) {
+        return (cellValue + "").includes(TABLE_KEY.VARIABLE_TABLE_SYNTAX)
+    }
+
+    static getScope(rownumber: number, startAt: number, endAt?: number): TableScope {
+        if(rownumber <= startAt) return "metadata";
+        if(endAt && rownumber >= endAt) return "metadata";
+        return "fields";
     }
 
 }

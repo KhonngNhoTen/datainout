@@ -1,14 +1,17 @@
 import { RawRecordType } from "../source/types/type.js";
-import {Readable} from "stream";
+import {PassThrough} from "stream";
+import { TableScope } from "../template-mappers/types/template.type.js";
 
-export type ReaderResult = {type: RawRecordType} & Record<string, any>;
+export type ReaderResult = {type: RawRecordType, scope: TableScope} & Record<string, any>;
 export type AddCallback = (data: ReaderResult|null) => any;
 
 export abstract class IReader {
-    protected readable: Readable = new Readable({objectMode: true});
-    async open() {}
+    protected readable: PassThrough = new PassThrough({objectMode: true});
+    
+    async open(opts?: any) {}
+
     async close() {}
-    stream(): Readable {return this.readable}
+    stream(): PassThrough {return this.readable}
     cancel() {}
     abstract get(add: AddCallback): Promise<void>;
 

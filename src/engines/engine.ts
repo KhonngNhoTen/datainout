@@ -8,7 +8,7 @@ import { Template } from "../template-mappers/types/template.type.js";
 import { BaseTransformer } from "../transformer/base-transformer.js";
 import { MappedRecord } from "../transformer/types/transformer-dto.js";
 import { BaseValidator } from "../validators/base-validator.js";
-import { PassThrough, Readable, TransformCallback, Writable } from "stream";
+import { Writable } from "stream";
 
 type EngineContructorOptions<T extends Template> = {
     source?: BaseSource,
@@ -28,8 +28,6 @@ export abstract class Engine<T extends Template> {
         onEnd: () => this.close(),
     });
     protected eventBus: EventBus = new EventBus();
-    protected doneCallback?: (value?: any) => void;
-    protected wait = () => new Promise((r) => { this.doneCallback = r; });
 
     constructor(
         opts: EngineContructorOptions<T>
@@ -42,32 +40,20 @@ export abstract class Engine<T extends Template> {
         this.source.stream().pipe(this.engineStream);
     }
 
-    async start() {
-        await this.open();
-
-        await this.source.start();
-
-        await this.wait();
-    }
-
-    private async open() {
+  
+    protected async open() {
         this.eventBus?.emit(Events.onFile);
         await this.source.open();
         await this.sink.open?.();
     }
 
-    private async close() {
+    protected async close() {
         await this.source.close();
         await this.sink.close?.();
         this.eventBus?.emit(Events.finishedFile);
-        this.doneCallback?.();
     }
 
-    private async handle(records: RawRecord[]) {
-        if (records === null) {
-            await this.close();
-            return;
-        }
+    protected async handle(records: RawRecord[]) {
         const data: any[] = []
         for (const record of records) {
             this.eventBus?.emit(Events.onRecord);
@@ -101,9 +87,10 @@ export abstract class Engine<T extends Template> {
 }
 
 export class EngineStream extends Writable {
-    onChunk: (chunk: any) => Promise<void>;
-    onEnd?: () => Promise<void>;
+    private onChunk: (chunk: any) => Promise<void>;
+    private onEnd?: () => Promise<void>;
     // onStart?: () => void;
+    private callBackDone?: (value?: any) => void;
 
     constructor(
         opts: {
@@ -116,6 +103,10 @@ export class EngineStream extends Writable {
         this.onChunk = opts.onChunk;
         this.onEnd = opts.onEnd;
         // this.onStart = opts.onStart
+    }
+
+    waitingDone () {
+        return new Promise((r) => { this.callBackDone = r; });
     }
 
     _write(
@@ -132,7 +123,10 @@ export class EngineStream extends Writable {
 
     _final(callback: (error?: Error | null) => void) {
         this.onEnd?.().
-            then(() => callback()).
+            then(() => {
+                callback();
+                this.callBackDone?.();
+            }).
             catch((e) => callback(e as Error));
     }
 }
